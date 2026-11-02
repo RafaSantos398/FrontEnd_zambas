@@ -78,11 +78,12 @@ export default function ChecklistTools({ plan, token, hasTasks, onTasksChange, o
     </details>
     {(showForm || editingTask) && <form ref={editorRef} className="task-editor" onSubmit={save} key={editingTask?.id || "nova"}>
       <h3>{editingTask ? "Editar tarefa" : "Criar minha tarefa"}</h3>
-      <label>Título<input name="titulo" maxLength={200} required defaultValue={editingTask?.titulo || ""} /></label>
-      <label>Descrição<textarea name="descricao" maxLength={400} rows={3} defaultValue={editingTask?.descricao || ""} /></label>
-      <div className="form-grid"><label>Categoria<select name="categoria" defaultValue={editingTask?.categoria || "OUTROS"}>
+      <p className="control-help">Dê um nome curto à tarefa e use a descrição para os detalhes. Só o título aparece no quadro fechado.</p>
+      <label>Título <span className="optional-label">Obrigatório</span><input name="titulo" placeholder="Ex.: comparar três opções de moradia" maxLength={200} required defaultValue={editingTask?.titulo || ""} /></label>
+      <label>Descrição <span className="optional-label">Opcional · até 400 caracteres</span><textarea name="descricao" placeholder="O que você precisa fazer? Inclua suas observações aqui." maxLength={400} rows={3} defaultValue={editingTask?.descricao || ""} /></label>
+      <div className="form-grid two-cols"><label>Categoria<select name="categoria" defaultValue={editingTask?.categoria || "OUTROS"}>
         {Object.entries(labels.category).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select></label><label>Prazo<input type="date" name="prazo" defaultValue={editingTask?.prazo || ""} /></label></div>
+      </select></label><label>Prazo <span className="optional-label">Opcional</span><input type="date" name="prazo" defaultValue={editingTask?.prazo || ""} /></label></div>
       <div className="card-actions"><Button type="submit" disabled={busy}>{busy ? "Salvando…" : "Salvar tarefa"}</Button>
         <Button variant="secondary" disabled={busy} onClick={() => { setShowForm(false); onEditDone() }}>Cancelar edição</Button></div>
     </form>}

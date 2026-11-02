@@ -100,6 +100,15 @@ npm run build
 
 ## Checklists independentes de curso e finanças
 
+Os formulários compartilham campos com bordas arredondadas, foco visível,
+selects padronizados e estados desabilitados. A edição de tarefa distingue
+campos obrigatórios/opcionais e inclui dicas e placeholders. Os detalhes da
+tarefa usam rótulos associados aos campos, tags de categoria e ação de remoção
+distinta. Os valores financeiros ficam lado a lado no desktop e empilhados em
+telas menores. Ajuste visual sem mudanças no contrato da API ou no banco.
+Validação: build de produção/Docker, 8 testes HTTP do frontend e navegador
+com edição, seleção de status e prazo escolhido pelo calendário.
+
 O quadro agora mostra só os títulos das tarefas recolhidas. Clicar abre a
 descrição, o prazo, a edição e a remoção. Arrastar pelo título muda a tarefa
 entre Pendentes, Em andamento e Concluídas; o seletor Mover para oferece a

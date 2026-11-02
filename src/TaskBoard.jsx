@@ -59,20 +59,24 @@ export default function TaskBoard({ tasks, busy, onMove, onEdit, onRemove, onDea
           </button></h4>
           <div id={`task-details-${task.id}`} hidden={expanded !== task.id} className="task-details"
             onDragStart={event => { event.preventDefault(); event.stopPropagation() }}>
-            <small>{labels.category[task.categoria] || "Outros"} · {task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</small>
+            <div className="task-tags"><span>{labels.category[task.categoria] || "Outros"}</span><span>{task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</span></div>
             {task.descricao && <p>{task.descricao}</p>}
-            <label>Mover para<select value={task.status} disabled={!!busy}
+            <div className="task-field"><label htmlFor={`task-status-${task.id}`}>Mover para</label>
+            <select id={`task-status-${task.id}`} value={task.status} disabled={!!busy}
               onChange={event => void move(task, event.target.value)}>
               {columns.map(([value]) => <option key={value} value={value}>{labels.task[value]}</option>)}
-            </select></label>
-            <label>Prazo<input type="date" value={task.prazo || ""} disabled={!!busy}
-              onChange={event => void onDeadline(task, event.target.value || null)} /></label>
-            <div className="card-actions">
-              <Button variant="secondary" disabled={!!busy} onClick={() => onEdit(task)}>Editar</Button>
+            </select></div>
+            <div className="task-field"><label htmlFor={`task-deadline-${task.id}`}>Prazo <span className="optional-label">Opcional</span></label>
+            <input id={`task-deadline-${task.id}`} type="date" value={task.prazo || ""} disabled={!!busy}
+              aria-describedby={`task-deadline-help-${task.id}`}
+              onChange={event => void onDeadline(task, event.target.value || null)} />
+            <small id={`task-deadline-help-${task.id}`} className="control-help">Deixe em branco para manter sem prazo.</small></div>
+            <div className="card-actions task-detail-actions">
+              <Button variant="secondary" icon="edit" disabled={!!busy} onClick={() => onEdit(task)}>Editar</Button>
               {removingTask === task.id ? <>
-                <Button variant="secondary" disabled={!!busy} onClick={() => void onRemove(task)}>Confirmar remoção</Button>
+                <Button variant="secondary" className="button-remove" disabled={!!busy} onClick={() => void onRemove(task)}>Confirmar remoção</Button>
                 <Button variant="secondary" disabled={!!busy} onClick={() => onRemovingChange(null)}>Manter tarefa</Button>
-              </> : <Button variant="secondary" disabled={!!busy} onClick={() => onRemovingChange(task.id)}>Remover</Button>}
+              </> : <Button variant="secondary" className="button-remove" disabled={!!busy} onClick={() => onRemovingChange(task.id)}>Remover</Button>}
             </div>
           </div>
         </article>)}

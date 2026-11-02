@@ -43,7 +43,7 @@ export default function FinancePage({ plan, token, onSaved, onError }) {
     {!data ? !error && <Spinner label="Carregando planejamento financeiro" /> : <>
       <form className="panel content-panel finance-form" onSubmit={save}>
         <p>Use suas próprias estimativas na moeda do plano ({data.moeda}). A meta total também atualiza o orçamento do resumo.</p>
-        <div className="form-grid">
+        <div className="form-grid finance-inputs">
           <label>Quanto preciso no total<input type="number" name="meta" min="0" max="999999999999.99" step="0.01" required defaultValue={data.metaTotal ?? ""} /></label>
           <label>Quanto já tenho guardado<input type="number" name="guardado" min="0" max="999999999999.99" step="0.01" required defaultValue={data.valorGuardado} /></label>
           <label>Quanto consigo guardar por mês<input type="number" name="aporte" min="0" max="999999999999.99" step="0.01" required defaultValue={data.aporteMensal} /></label>
