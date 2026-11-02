@@ -18,7 +18,7 @@ segredos em variáveis VITE_*.
 
 ## Verificações realizadas
 
-- Produção Ready na Vercel, commit c027bc0 da main.
+- Publicação inicial Ready na Vercel, commit c027bc0 da main.
 - Página e JavaScript HTTP 200 por HTTPS; bundle aponta para a API do Render.
 - Preflight da Vercel HTTP 200, com Access-Control-Allow-Origin exato.
 - API sem token e login com credenciais inexistentes retornam 401 com CORS.
@@ -28,6 +28,20 @@ segredos em variáveis VITE_*.
 - Não foram cadastradas contas ou planos de teste no PostgreSQL nesta rodada.
   Login bem-sucedido e operações autenticadas com uma conta real ainda não
   foram exercitados no domínio público nesta validação.
+
+## Atualização de checklists e finanças
+
+Código do frontend b02356d publicado e Ready em 02/11/2026. Backend 5f69009
+publicado no Render após migrar o PostgreSQL, preservando os dados anteriores.
+Os novos checklists têm seis temas e 24 sugestões, aceitam tarefas próprias e
+não exigem curso. A aba Finanças salva e calcula meta, reserva e aporte mensal.
+
+Validação: 67 testes no H2 e 67 no PostgreSQL 18 local isolado, 8 testes do
+frontend e builds Docker. Navegador local: temas sem duplicação, conclusão,
+criação/edição/remoção de tarefa própria, finanças persistidas e aporte zero.
+Em produção, o novo bundle e a URL da API foram conferidos, junto da proteção
+dos endpoints e do preflight do domínio da Vercel. Não foram criadas contas ou
+tarefas de teste no PostgreSQL publicado nesta atualização.
 
 ## Atualizar o site
 
