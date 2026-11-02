@@ -376,3 +376,19 @@
 .proficiency-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 14px 0; }
 .proficiency-row label { flex: 1; min-width: 100px; }
 @media (max-width: 960px) { .sidebar { visibility: hidden; } .sidebar.open { visibility: visible; } }
+
+/* Checklists independentes do catálogo e planejamento financeiro. */
+.theme-options { border: 0; padding: 0; margin: 1.2rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .75rem; }
+.theme-options legend { margin-bottom: .75rem; font-weight: 600; }
+.theme-choice { display: flex; align-items: center; gap: .65rem; padding: .9rem; border: 1px solid #ded5ed; border-radius: 12px; cursor: pointer; }
+.theme-choice input { width: 18px; height: 18px; accent-color: #7042a8; flex-shrink: 0; }
+.theme-choice span { display: grid; gap: .2rem; }
+.theme-choice small, .help-text { color: #71647f; font-size: .875rem; line-height: 1.6; }
+.task-editor { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #ded5ed; display: grid; gap: 1rem; }
+.task-editor label, .finance-form label { display: grid; gap: .4rem; }
+.finance-form .form-grid { margin: 1.2rem 0; }
+.finance-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; }
+.finance-result { padding: 1.4rem; display: grid; gap: .8rem; }
+.finance-result strong { font-size: 1.5rem; color: #593383; overflow-wrap: anywhere; }
+.checklist-tools .section-heading { flex-wrap: wrap; gap: 1rem; }
+@media (max-width: 600px) { .theme-options, .finance-results { grid-template-columns: 1fr; } }

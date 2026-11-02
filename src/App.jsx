@@ -121,9 +121,9 @@ function Landing({ onNavigate }) {
           <li>
             <span>02</span>
             <div>
-              <h3>Conecte seu curso</h3>
+              <h3>Defina suas prioridades</h3>
               <p>
-                Escolha entre os cursos ativos cadastrados pela sua instituição.
+                Escolha temas para o checklist e planeje sua reserva, mesmo sem um curso definido.
               </p>
             </div>
           </li>
@@ -132,7 +132,7 @@ function Landing({ onNavigate }) {
             <div>
               <h3>Cumpra as etapas</h3>
               <p>
-                Gere um checklist real e acompanhe o que está pendente ou
+                Monte checklists por tema ou crie suas tarefas e acompanhe o que está pendente ou
                 concluído.
               </p>
             </div>
@@ -416,7 +416,7 @@ function PlanForm({ plan, token, onClose, onSaved, onUnauthorized }) {
           {plan ? "Atualizar planejamento" : "Novo começo"}
         </span>
         <h2 id="plan-form-title">{plan ? "Editar plano" : "Criar um plano"}</h2>
-        <p>Você poderá escolher o curso e gerar tarefas depois.</p>
+        <p>Você poderá montar checklists, planejar sua reserva e escolher um curso depois.</p>
         {error && <Notice>{error}</Notice>}
         <form
           className="form-grid two-cols"

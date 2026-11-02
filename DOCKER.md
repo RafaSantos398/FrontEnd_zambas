@@ -99,8 +99,9 @@ credenciais no Dockerfile ou no Git.
 O backend foi publicado no Render em 02/11/2026:
 **https://berxy-api.onrender.com** (Docker, plano Free, commit 256ba59).
 Para o frontend na Vercel, usar `VITE_API_URL=https://berxy-api.onrender.com`.
-A publicação pública do frontend ainda está pendente. Adicionar sua origem
-HTTPS a FRONTEND_ORIGINS no Render quando essa URL existir.
+O frontend também foi publicado: **https://berxy.vercel.app**.
+Essa origem HTTPS foi adicionada a FRONTEND_ORIGINS no Render.
+Consulte DEPLOY-VERCEL.md para atualizar a publicação.
 
 ## Validação em 02/11/2026
 

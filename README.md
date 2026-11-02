@@ -98,16 +98,39 @@ npm run build
   A suíte anterior de 55 testes já havia sido validada nesse PostgreSQL;
   esta rodada de 58 testes foi local, sem mudança no esquema de tabelas.
 
-## Próxima etapa
+## Checklists independentes de curso e finanças
+
+O plano permite escolher seis temas com 24 sugestões, mesmo com o catálogo de
+cursos vazio. Nova tarefa cria itens próprios; Editar e Remover permitem adaptar
+o checklist. Adicionar o mesmo tema mantém tarefas, prazos e conclusões existentes.
+O botão de tarefas do curso continua disponível quando houver um curso selecionado.
+
+A aba Finanças salva a meta total, a reserva atual e o aporte mensal. Mostra
+quanto falta, meses completos disponíveis, aporte necessário, meses para a meta
+e previsão até o início. A meta também atualiza o orçamento do resumo. Os
+valores usam a moeda do plano e as estimativas do usuário, sem conversão ou juros.
+
+Componentes adicionados: src/ChecklistTools.jsx e src/FinancePage.jsx.
+Backend necessário: endpoints /tarefas/temas, /tarefas/gerar-temas, CRUD de
+tarefas próprias e GET/PUT /financeiro. Antes de publicar, aplicar a migração
+20261102-checklists-financas.sql no backend, publicar a API e só então o frontend.
+
+Validação desta versão: 67 testes do backend no H2 e no PostgreSQL 18 local,
+8 testes do frontend, builds de produção e Docker, interface real com catálogo
+vazio, geração por tema sem duplicação, tarefas próprias e valores financeiros
+persistidos. Os testes que criam contas e tarefas usaram apenas o H2 local.
+
+## Publicação e execução
 
 Docker está configurado e validado com o PostgreSQL do Render. Consulte
 [DOCKER.md](DOCKER.md) para iniciar, testar e parar os containers. O site local
 com Docker usa http://localhost:3000 e encaminha /api/ ao backend.
 
-O backend já foi publicado e verificado no Render:
-https://berxy-api.onrender.com. A publicação pública do frontend na Vercel
-ainda precisa ser feita e validada. Usar essa URL HTTPS como VITE_API_URL,
-sem /api, e cadastrar a origem da Vercel em FRONTEND_ORIGINS no Render.
+Frontend publicado: **https://berxy.vercel.app**.
+Backend publicado: **https://berxy-api.onrender.com**.
+Consulte [DEPLOY-VERCEL.md](DEPLOY-VERCEL.md) para configuração e atualizações.
+VITE_API_URL aponta para a API HTTPS, sem /api; FRONTEND_ORIGINS no Render
+inclui o domínio principal da Vercel.
 O build estático sai em dist/; `npm run preview` permite conferi-lo localmente
 na porta 4173. A URL pública do backend deverá estar correta antes de gerar
 o build que será publicado.

@@ -34,4 +34,6 @@ Preservar os contratos reais do backend; não simular endpoints ou persistência
 As respostas de plano incluem cursoSelecionado, cursoId e cursoNome.
 O logout limpa dados privados, formulários e resultados da sessão anterior.
 Registre alterações de contrato e testes no README. Docker está configurado;
-consulte DOCKER.md. A publicação pública ainda é uma próxima etapa.
+consulte DOCKER.md. Site público: https://berxy.vercel.app; API pública:
+https://berxy-api.onrender.com. Consulte DEPLOY-VERCEL.md. Não adicionar
+origens temporárias de Preview ao CORS automaticamente.

@@ -14,6 +14,8 @@ import {
 import { useDialog } from "./useDialog"
 
 import { labels } from "./types"
+import ChecklistTools from "./ChecklistTools"
+import FinancePage from "./FinancePage"
 
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
@@ -39,6 +41,9 @@ export default function PlanDetail({
   const [tab, setTab] = useState("summary")
 
   const [tasks, setTasks] = useState([])
+  const [editingTask, setEditingTask] = useState(null)
+  const [removingTask, setRemovingTask] = useState(null)
+  const courseTasks = tasks.some(task => task.modeloOrigemId != null)
 
   const [preparations, setPreparations] = useState([])
 
@@ -165,7 +170,7 @@ export default function PlanDetail({
 
       onPlanChange,
 
-      "Curso selecionado. Agora você pode gerar o checklist.",
+      "Curso selecionado. Você pode adicionar as tarefas específicas dele ao checklist.",
     )
   }
 
@@ -225,6 +230,16 @@ export default function PlanDetail({
         ? "Tarefa concluída. Mais uma etapa na mochila!"
         : "Tarefa atualizada.",
     )
+  }
+
+  async function removeTask(task) {
+    await mutate(`task-${task.id}`, () => api(`/planos-intercambio/${plan.id}/tarefas/${task.id}`, {
+      method: "DELETE", token,
+    }), () => {
+      setTasks(current => current.filter(item => item.id !== task.id))
+      if (editingTask?.id === task.id) setEditingTask(null)
+      setRemovingTask(null)
+    }, "Tarefa removida do plano.")
   }
 
   async function setDeadline(task, prazo) {
@@ -382,6 +397,7 @@ export default function PlanDetail({
           ],
 
           ["language", "Preparação de idioma"],
+          ["finance", "Finanças"],
         ].map(([value, label]) => (
           <button
             key={value}
@@ -413,7 +429,7 @@ export default function PlanDetail({
                 <p>
                   {tasks.length
                     ? `${completed} de ${tasks.length} tarefas concluídas`
-                    : "Gere o checklist após escolher um curso."}
+                    : "Escolha temas ou crie suas próprias tarefas, mesmo sem curso."}
                 </p>
               </article>
               <article className="panel facts-panel">
@@ -444,15 +460,13 @@ export default function PlanDetail({
               <article className="panel next-panel">
                 <span className="panel-kicker">Próximo passo</span>
                 <h2>
-                  {!plan.cursoSelecionado
-                    ? "Escolha o curso que combina com o plano"
-                    : tasks.length === 0
+                  {tasks.length === 0
                       ? "Gere seu checklist personalizado"
                       : "Continue avançando nas tarefas"}
                 </h2>
                 <Button
                   onClick={() =>
-                    setTab(!plan.cursoSelecionado ? "course" : "tasks")
+                    setTab("tasks")
                   }
                   icon="arrow"
                 >
@@ -474,12 +488,12 @@ export default function PlanDetail({
                 <Notice kind="info">
                   Curso selecionado:{" "}
                   <strong>{plan.cursoNome || "Curso definido"}</strong>.{" "}
-                  {tasks.length > 0
-                    ? "O curso não pode ser alterado depois da geração de tarefas."
-                    : "Você pode trocar o curso antes de gerar tarefas."}
+                  {courseTasks
+                    ? "O curso não pode ser alterado depois de adicionar tarefas específicas dele."
+                    : "Tarefas por tema e tarefas próprias não impedem escolher ou trocar o curso."}
                 </Notice>
               )}
-              {tasks.length > 0 ? null : courses.length ? (
+              {courseTasks ? null : courses.length ? (
                 <div className="course-picker">
                   <label>
                     Selecione um curso ativo
@@ -525,7 +539,7 @@ export default function PlanDetail({
               ) : (
                 <EmptyState
                   title="Nenhum curso compatível disponível"
-                  text="O catálogo não retornou cursos ativos para este tipo de intercâmbio. Um administrador precisa cadastrar e ativar o curso."
+                  text="Ainda não há cursos ativos para este tipo. Você pode continuar nas abas Checklist, Finanças e Preparação de idioma sem escolher um curso."
                 />
               )}
             </div>
@@ -540,24 +554,20 @@ export default function PlanDetail({
                 </div>
                 <Button
                   onClick={() => void generateTasks()}
-                  disabled={busy === "generate"}
+                  disabled={busy === "generate" || !plan.cursoSelecionado}
                   icon="refresh"
                 >
                   {busy === "generate"
                     ? "Sincronizando…"
-                    : tasks.length
-                      ? "Sincronizar checklist"
-                      : "Gerar checklist"}
+                    : "Adicionar tarefas do curso"}
                 </Button>
               </div>
+              <ChecklistTools plan={plan} token={token} onTasksChange={setTasks}
+                onError={guard} editingTask={editingTask} onEditDone={() => setEditingTask(null)} />
               {!tasks.length ? (
                 <EmptyState
                   title="Seu checklist ainda está vazio"
-                  text={
-                    plan.cursoSelecionado
-                      ? "Gere as tarefas com base nos modelos ativos associados ao curso."
-                      : "Escolha um curso antes de gerar as tarefas."
-                  }
+                  text="Adicione um ou mais temas acima ou use Nova tarefa para montar um checklist pessoal."
                 />
               ) : (
                 <div className="task-board">
@@ -573,6 +583,7 @@ export default function PlanDetail({
                             status={task.status}
                           />
                           <h4>{task.titulo}</h4>
+                          <small>{labels.category[task.categoria] || "Outros"} · {task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</small>
                           {task.descricao && <p>{task.descricao}</p>}
                           <div className="deadline">
                             <Icon name="calendar" size={17} />
@@ -593,6 +604,11 @@ export default function PlanDetail({
                             </label>
                           </div>
                           <div className="card-actions">
+                            <Button variant="secondary" disabled={!!busy} onClick={() => setEditingTask(task)}>Editar</Button>
+                            {removingTask === task.id ? <>
+                              <Button variant="secondary" disabled={!!busy} onClick={() => void removeTask(task)}>Confirmar remoção</Button>
+                              <Button variant="secondary" disabled={!!busy} onClick={() => setRemovingTask(null)}>Manter tarefa</Button>
+                            </> : <Button variant="secondary" disabled={!!busy} onClick={() => setRemovingTask(task.id)}>Remover</Button>}
                             {task.status === "PENDENTE" && (
                               <Button
                                 variant="secondary"
@@ -630,6 +646,8 @@ export default function PlanDetail({
               )}
             </div>
           )}
+
+          {tab === "finance" && <FinancePage plan={plan} token={token} onSaved={onPlanChange} onError={guard} />}
 
           {tab === "language" && (
             <div className="content-stack">
