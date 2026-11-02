@@ -1,6 +1,11 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
-import { api, ApiError, API_URL, getErrorMessage } from "./api"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+
+import { api, ApiError, getErrorMessage } from "./api"
+
+import { useDialog } from "./useDialog"
+
 import AdminPage from "./AdminPage"
+
 import {
   Bear,
   Button,
@@ -11,34 +16,32 @@ import {
   Spinner,
   StatusBadge,
 } from "./components"
+
 import PlanDetail from "./PlanDetail"
+
 import ProfilePage from "./ProfilePage"
-import type {
-  AuthResponse,
-  Course,
-  ExchangeType,
-  Plan,
-  PlanPayload,
-  PlanStatus,
-  User,
-} from "./types"
+
 import { labels } from "./types"
 
-type PublicView = "landing" | "login" | "register"
-type AppView = "overview" | "plans" | "courses" | "profile" | "admin"
-
-const emptyPlan: PlanPayload = {
+const emptyPlan = {
   titulo: "",
+
   tipoIntercambio: "CURSO_IDIOMA",
+
   status: "RASCUNHO",
+
   orcamentoTotal: null,
+
   moeda: "BRL",
+
   inicioPrevisto: null,
+
   duracaoMeses: null,
+
   dependeBolsa: false,
 }
 
-function Landing({ onNavigate }: { onNavigate: (view: PublicView) => void }) {
+function Landing({ onNavigate }) {
   return (
     <main className="public-page">
       <nav className="public-nav">
@@ -144,51 +147,71 @@ function Landing({ onNavigate }: { onNavigate: (view: PublicView) => void }) {
   )
 }
 
-function AuthScreen({
-  mode,
-  onNavigate,
-  onAuthenticated,
-}: {
-  mode: "login" | "register"
-  onNavigate: (view: PublicView) => void
-  onAuthenticated: (token: string, user: User) => void
-}) {
+function AuthScreen({ mode, onNavigate, onAuthenticated }) {
   const [showPassword, setShowPassword] = useState(false)
+
   const [busy, setBusy] = useState(false)
+
   const [error, setError] = useState("")
+
   const [success, setSuccess] = useState("")
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event) {
     event.preventDefault()
+
     if (busy) return
+
     setBusy(true)
+
     setError("")
+
     setSuccess("")
+
     const form = new FormData(event.currentTarget)
+
     const password = String(form.get("password"))
-    if (mode === "register" && password !== form.get("confirmPassword")) {
-      setError("A confirmação de senha não corresponde.")
+
+    if (new TextEncoder().encode(password).length > 72) {
+      setError("A senha deve ter no máximo 72 bytes em UTF-8.")
+
       setBusy(false)
+
       return
     }
+
+    if (mode === "register" && password !== form.get("confirmPassword")) {
+      setError("A confirmação de senha não corresponde.")
+
+      setBusy(false)
+
+      return
+    }
+
     try {
       if (mode === "register") {
-        await api<AuthResponse>("/auth/register", {
+        await api("/auth/register", {
           method: "POST",
+
           body: { nome: form.get("nome"), email: form.get("email"), password },
         })
+
         setSuccess("Conta criada. Entre com seu e-mail e senha para continuar.")
+
         setTimeout(() => onNavigate("login"), 900)
       } else {
-        const response = await api<AuthResponse>("/auth/login", {
+        const response = await api("/auth/login", {
           method: "POST",
+
           body: { email: form.get("email"), password },
         })
+
         if (!response.token)
           throw new Error("A API não retornou um token de acesso.")
-        const current = await api<AuthResponse>("/auth/me", {
+
+        const current = await api("/auth/me", {
           token: response.token,
         })
+
         onAuthenticated(response.token, current.usuario)
       }
     } catch (submitError) {
@@ -214,11 +237,7 @@ function AuthScreen({
           <p>A gente ajuda a organizar o resto.</p>
         </div>
         <Bear />
-        <small>
-          API configurada em
-          <br />
-          <strong>{API_URL}</strong>
-        </small>
+        <small>Seu próximo passo começa aqui.</small>
       </section>
       <section className="auth-form-wrap">
         <button className="back-link" onClick={() => onNavigate("landing")}>
@@ -265,7 +284,7 @@ function AuthScreen({
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={8}
+                  minLength={mode === "register" ? 8 : undefined}
                   autoComplete={
                     mode === "login" ? "current-password" : "new-password"
                   }
@@ -319,46 +338,53 @@ function AuthScreen({
   )
 }
 
-function PlanForm({
-  plan,
-  token,
-  onClose,
-  onSaved,
-  onUnauthorized,
-}: {
-  plan?: Plan
-  token: string
-  onClose: () => void
-  onSaved: (plan: Plan) => void
-  onUnauthorized: () => void
-}) {
+function PlanForm({ plan, token, onClose, onSaved, onUnauthorized }) {
   const initial = plan || emptyPlan
+
+  const dialogRef = useDialog(onClose)
+
   const [busy, setBusy] = useState(false)
+
   const [error, setError] = useState("")
-  async function submit(event: FormEvent<HTMLFormElement>) {
+
+  async function submit(event) {
     event.preventDefault()
+
     setBusy(true)
+
     setError("")
+
     const form = new FormData(event.currentTarget)
-    const optional = (name: string) =>
-      String(form.get(name) || "").trim() || null
-    const body: PlanPayload = {
+
+    const optional = (name) => String(form.get(name) || "").trim() || null
+
+    const body = {
       titulo: String(form.get("titulo")).trim(),
-      tipoIntercambio: form.get("tipo") as ExchangeType,
-      status: form.get("status") as PlanStatus,
+
+      tipoIntercambio: form.get("tipo"),
+
+      status: form.get("status"),
+
       orcamentoTotal:
         optional("orcamento") === null ? null : Number(optional("orcamento")),
+
       moeda: optional("moeda")?.toUpperCase() || null,
+
       inicioPrevisto: optional("inicio"),
+
       duracaoMeses:
         optional("duracao") === null ? null : Number(optional("duracao")),
+
       dependeBolsa: form.get("bolsa") === "on",
     }
+
     try {
-      const saved = await api<Plan>(
+      const saved = await api(
         plan ? `/planos-intercambio/${plan.id}` : "/planos-intercambio",
+
         { method: plan ? "PUT" : "POST", token, body },
       )
+
       onSaved(saved)
     } catch (saveError) {
       if (saveError instanceof ApiError && saveError.status === 401)
@@ -368,10 +394,12 @@ function PlanForm({
       setBusy(false)
     }
   }
+
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <div
         className="modal modal-wide"
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="plan-form-title"
@@ -490,26 +518,27 @@ function PlanForm({
   )
 }
 
-function CoursesPage({
-  token,
-  onUnauthorized,
-}: {
-  token: string
-  onUnauthorized: () => void
-}) {
-  const [courses, setCourses] = useState<Course[]>([])
+function CoursesPage({ token, onUnauthorized }) {
+  const [courses, setCourses] = useState([])
+
   const [loading, setLoading] = useState(true)
+
   const [error, setError] = useState("")
+
   useEffect(() => {
-    api<Course[]>("/cursos", { token })
+    api("/cursos", { token })
+
       .then(setCourses)
+
       .catch((loadError) => {
         if (loadError instanceof ApiError && loadError.status === 401)
           onUnauthorized()
         else setError(getErrorMessage(loadError))
       })
+
       .finally(() => setLoading(false))
   }, [onUnauthorized, token])
+
   return (
     <section>
       <header className="page-heading">
@@ -528,7 +557,9 @@ function CoursesPage({
       ) : courses.filter((item) => item.ativo).length ? (
         <div className="course-grid">
           {courses
+
             .filter((item) => item.ativo)
+
             .map((course) => (
               <article className="panel course-card" key={course.id}>
                 <div className="course-icon">
@@ -562,55 +593,116 @@ function CoursesPage({
 }
 
 export default function App() {
-  const [publicView, setPublicView] = useState<PublicView>("landing")
-  const [token, setToken] = useState<string | null>(null)
-  const [user, setUser] = useState<User | null>(null)
-  const [view, setView] = useState<AppView>("overview")
-  const [plans, setPlans] = useState<Plan[]>([])
+  const [publicView, setPublicView] = useState("landing")
+
+  const [token, setToken] = useState(null)
+
+  const sessionToken = useRef(null)
+
+  const [user, setUser] = useState(null)
+
+  const [view, setView] = useState("overview")
+
+  const [plans, setPlans] = useState([])
+
   const [plansLoading, setPlansLoading] = useState(false)
+
   const [plansError, setPlansError] = useState("")
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
-  const [editingPlan, setEditingPlan] = useState<Plan | "new" | null>(null)
+
+  const [selectedPlan, setSelectedPlan] = useState(null)
+
+  const [editingPlan, setEditingPlan] = useState(null)
+
   const [menuOpen, setMenuOpen] = useState(false)
+
   const [sessionMessage, setSessionMessage] = useState("")
 
   const logoutLocal = useCallback((message = "") => {
+    sessionToken.current = null
+
     setToken(null)
+
     setUser(null)
+
     setPlans([])
+
     setSelectedPlan(null)
+
+    setEditingPlan(null)
+
+    setView("overview")
+
+    setMenuOpen(false)
+
+    setPlansError("")
+
+    setPlansLoading(false)
+
     setPublicView("login")
+
     setSessionMessage(message)
   }, [])
 
-  const loadPlans = useCallback(async () => {
-    if (!token) return
-    setPlansLoading(true)
-    setPlansError("")
-    try {
-      setPlans(await api<Plan[]>("/planos-intercambio", { token }))
-    } catch (loadError) {
-      if (loadError instanceof ApiError && loadError.status === 401)
-        logoutLocal("Sua sessão expirou. Entre novamente para continuar.")
-      else setPlansError(getErrorMessage(loadError))
-    } finally {
-      setPlansLoading(false)
-    }
-  }, [logoutLocal, token])
+  const handleUnauthorized = useCallback(
+    (message = "Sua sessão expirou. Entre novamente.") => {
+      if (sessionToken.current === token) logoutLocal(message)
+    },
+    [logoutLocal, token],
+  )
+
+  function navigate(next) {
+    setSelectedPlan(null)
+
+    setEditingPlan(null)
+
+    setView(next)
+
+    setMenuOpen(false)
+  }
+
+  const loadPlans = useCallback(
+    async (signal) => {
+      if (!token || sessionToken.current !== token) return
+
+      setPlansLoading(true)
+
+      setPlansError("")
+
+      try {
+        const data = await api("/planos-intercambio", { token, signal })
+
+        if (sessionToken.current === token) setPlans(data)
+      } catch (error) {
+        if (error.name === "AbortError" || sessionToken.current !== token)
+          return
+
+        if (error instanceof ApiError && error.status === 401)
+          handleUnauthorized()
+        else setPlansError(getErrorMessage(error))
+      } finally {
+        if (sessionToken.current === token) setPlansLoading(false)
+      }
+    },
+    [handleUnauthorized, token],
+  )
 
   useEffect(() => {
-    if (token) void loadPlans()
+    const controller = new AbortController()
+
+    if (token) void loadPlans(controller.signal)
+
+    return () => controller.abort()
   }, [loadPlans, token])
 
-  async function logout() {
-    if (token) {
-      try {
-        await api<void>("/auth/logout", { method: "POST", token })
-      } catch {
-        /* O token ainda é descartado localmente. */
-      }
-    }
+  function logout() {
+    const previousToken = token
+
     logoutLocal("Você saiu da sua conta com segurança.")
+
+    if (previousToken)
+      void api("/auth/logout", { method: "POST", token: previousToken }).catch(
+        () => {},
+      )
   }
 
   const counts = useMemo(
@@ -618,18 +710,25 @@ export default function App() {
       Object.fromEntries(
         Object.keys(labels.plan).map((status) => [
           status,
+
           plans.filter((plan) => plan.status === status).length,
         ]),
-      ) as Record<PlanStatus, number>,
+      ),
+
     [plans],
   )
+
   const nav = [
     ["overview", "Visão geral", "home"],
+
     ["plans", "Meus planos", "plans"],
+
     ["courses", "Cursos", "course"],
+
     ["profile", "Meu perfil", "profile"],
+
     ...(user?.role === "ADMIN" ? [["admin", "Administração", "admin"]] : []),
-  ] as [AppView, string, "home" | "plans" | "course" | "profile" | "admin"][]
+  ]
 
   if (!token || !user) {
     if (publicView === "landing")
@@ -637,22 +736,31 @@ export default function App() {
         <Landing
           onNavigate={(next) => {
             setSessionMessage("")
+
             setPublicView(next)
           }}
         />
       )
+
     return (
       <>
         <AuthScreen
+          key={publicView}
           mode={publicView}
           onNavigate={(next) => {
             setSessionMessage("")
+
             setPublicView(next)
           }}
           onAuthenticated={(nextToken, nextUser) => {
+            sessionToken.current = nextToken
+
             setToken(nextToken)
+
             setUser(nextUser)
+
             setView("overview")
+
             setSessionMessage("")
           }}
         />
@@ -673,32 +781,35 @@ export default function App() {
           user={user}
           nav={nav}
           view={view}
-          setView={setView}
+          setView={navigate}
           onLogout={() => void logout()}
           open={menuOpen}
           setOpen={setMenuOpen}
         />
         <main className="app-main">
-          <MobileHeader setOpen={setMenuOpen} />
+          <MobileHeader setOpen={setMenuOpen} open={menuOpen} />
           <PlanDetail
             plan={selectedPlan}
             token={token}
             onBack={() => {
               setSelectedPlan(null)
+
               setView("plans")
+
               void loadPlans()
             }}
             onPlanChange={(updated) => {
+              if (sessionToken.current !== token) return
+
               setSelectedPlan(updated)
+
               setPlans((current) =>
                 current.map((item) =>
                   item.id === updated.id ? updated : item,
                 ),
               )
             }}
-            onUnauthorized={() =>
-              logoutLocal("Sua sessão expirou. Entre novamente.")
-            }
+            onUnauthorized={handleUnauthorized}
           />
         </main>
       </div>
@@ -738,6 +849,7 @@ export default function App() {
         <button
           onClick={(event) => {
             event.stopPropagation()
+
             setEditingPlan(plan)
           }}
         >
@@ -758,6 +870,7 @@ export default function App() {
         view={view}
         setView={(next) => {
           setView(next)
+
           setMenuOpen(false)
         }}
         onLogout={() => void logout()}
@@ -765,7 +878,7 @@ export default function App() {
         setOpen={setMenuOpen}
       />
       <main className="app-main">
-        <MobileHeader setOpen={setMenuOpen} />
+        <MobileHeader setOpen={setMenuOpen} open={menuOpen} />
         {view === "overview" && (
           <section>
             <header className="dashboard-hero">
@@ -784,7 +897,7 @@ export default function App() {
               {Object.entries(labels.plan).map(([status, label]) => (
                 <article key={status}>
                   <span>{label}</span>
-                  <strong>{counts[(status as PlanStatus)]}</strong>
+                  <strong>{counts[status]}</strong>
                 </article>
               ))}
             </div>
@@ -854,30 +967,20 @@ export default function App() {
           </section>
         )}
         {view === "courses" && (
-          <CoursesPage
-            token={token}
-            onUnauthorized={() =>
-              logoutLocal("Sua sessão expirou. Entre novamente.")
-            }
-          />
+          <CoursesPage token={token} onUnauthorized={handleUnauthorized} />
         )}
         {view === "profile" && (
           <ProfilePage
             user={user}
             token={token}
-            onUserChange={setUser}
-            onUnauthorized={() =>
-              logoutLocal("Sua sessão expirou. Entre novamente.")
-            }
+            onUserChange={(updated) => {
+              if (sessionToken.current === token) setUser(updated)
+            }}
+            onUnauthorized={handleUnauthorized}
           />
         )}
         {view === "admin" && user.role === "ADMIN" && (
-          <AdminPage
-            token={token}
-            onUnauthorized={() =>
-              logoutLocal("Sua sessão expirou. Entre novamente.")
-            }
-          />
+          <AdminPage token={token} onUnauthorized={handleUnauthorized} />
         )}
       </main>
       {editingPlan && (
@@ -885,16 +988,18 @@ export default function App() {
           plan={editingPlan === "new" ? undefined : editingPlan}
           token={token}
           onClose={() => setEditingPlan(null)}
-          onUnauthorized={() =>
-            logoutLocal("Sua sessão expirou. Entre novamente.")
-          }
+          onUnauthorized={handleUnauthorized}
           onSaved={(saved) => {
+            if (sessionToken.current !== token) return
+
             setPlans((current) =>
               editingPlan === "new"
                 ? [saved, ...current]
                 : current.map((item) => (item.id === saved.id ? saved : item)),
             )
+
             setEditingPlan(null)
+
             setSelectedPlan(saved)
           }}
         />
@@ -903,30 +1008,26 @@ export default function App() {
   )
 }
 
-function Sidebar({
-  user,
-  nav,
-  view,
-  setView,
-  onLogout,
-  open,
-  setOpen,
-}: {
-  user: User
-  nav: [AppView, string, "home" | "plans" | "course" | "profile" | "admin"][]
-  view: AppView
-  setView: (view: AppView) => void
-  onLogout: () => void
-  open: boolean
-  setOpen: (open: boolean) => void
-}) {
+function Sidebar({ user, nav, view, setView, onLogout, open, setOpen }) {
+  useEffect(() => {
+    if (!open) return
+
+    const onKey = (event) => {
+      if (event.key === "Escape") setOpen(false)
+    }
+
+    document.addEventListener("keydown", onKey)
+
+    return () => document.removeEventListener("keydown", onKey)
+  }, [open, setOpen])
+
   return (
     <>
       <div
         className={`sidebar-overlay ${open ? "open" : ""}`}
         onClick={() => setOpen(false)}
       />
-      <aside className={`sidebar ${open ? "open" : ""}`}>
+      <aside id="main-navigation" className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-head">
           <Logo light />
           <button
@@ -966,13 +1067,15 @@ function Sidebar({
   )
 }
 
-function MobileHeader({ setOpen }: { setOpen: (open: boolean) => void }) {
+function MobileHeader({ setOpen, open }) {
   return (
     <header className="mobile-header">
       <Logo />
       <button
         className="icon-button"
         aria-label="Abrir menu"
+        aria-expanded={open}
+        aria-controls="main-navigation"
         onClick={() => setOpen(true)}
       >
         <Icon name="menu" />

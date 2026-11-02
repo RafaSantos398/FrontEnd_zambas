@@ -1,113 +1,146 @@
-import { FormEvent, useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+
 import { api, ApiError, getErrorMessage } from "./api"
+
 import { Button, Notice, Spinner } from "./components"
-import type {
-  EducationLevel,
-  LanguageLevel,
-  Profile,
-  SchoolStatus,
-  User,
-} from "./types"
+
 import { labels } from "./types"
 
-interface Props {
-  user: User
-  token: string
-  onUserChange: (user: User) => void
-  onUnauthorized: () => void
-}
-
-const emptyProfile: Profile = {
+const emptyProfile = {
   nascimento: "",
+
   nacionalidades: [],
+
   paisResidencia: "",
+
   proficienciaIdioma: [],
+
   situacaoEscolaridade: "CURSANDO",
+
   nivelEscolaridade: "GRADUACAO",
 }
 
 export default function ProfilePage({
   user,
+
   token,
+
   onUserChange,
+
   onUnauthorized,
-}: Props) {
-  const [profile, setProfile] = useState<Profile>(emptyProfile)
+}) {
+  const [profile, setProfile] = useState(emptyProfile)
+
   const [exists, setExists] = useState(false)
+
   const [loading, setLoading] = useState(true)
+
   const [busy, setBusy] = useState("")
+
   const [error, setError] = useState("")
+
   const [success, setSuccess] = useState("")
-  const [tab, setTab] = useState<"profile" | "account" | "password">("profile")
+
+  const [tab, setTab] = useState("profile")
 
   const handleError = useCallback(
-    (loadError: unknown) => {
+    (loadError) => {
       if (loadError instanceof ApiError && loadError.status === 401)
         return onUnauthorized()
+
       setError(getErrorMessage(loadError))
     },
+
     [onUnauthorized],
   )
 
   useEffect(() => {
     const controller = new AbortController()
+
     setLoading(true)
-    api<Profile>(`/users/${user.id}/perfil`, {
+
+    api(`/users/${user.id}/perfil`, {
       token,
+
       signal: controller.signal,
     })
+
       .then((data) => {
         setProfile(data)
+
         setExists(true)
       })
+
       .catch((loadError) => {
         if (
           loadError instanceof DOMException &&
           loadError.name === "AbortError"
         )
           return
+
         if (loadError instanceof ApiError && loadError.status === 404) {
           setProfile(emptyProfile)
+
           setExists(false)
         } else handleError(loadError)
       })
+
       .finally(() => setLoading(false))
+
     return () => controller.abort()
   }, [handleError, token, user.id])
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(event) {
     event.preventDefault()
+
+    if (busy) return
+
     setBusy("profile")
+
     setError("")
+
     setSuccess("")
+
     const form = new FormData(event.currentTarget)
-    const proficiencies = String(form.get("proficiencias") || "")
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .map((item) => {
-        const [idioma, nivel] = item.split(":").map((part) => part.trim())
-        return { idioma, nivel: nivel?.toUpperCase() as LanguageLevel }
-      })
-    const body: Profile = {
+
+    const proficiencies = profile.proficienciaIdioma.map((item) => ({
+      idioma: item.idioma.trim(),
+      nivel: item.nivel,
+    }))
+
+    const body = {
       nascimento: String(form.get("nascimento")),
+
       nacionalidades: String(form.get("nacionalidades"))
+
         .split(",")
+
         .map((item) => item.trim())
+
         .filter(Boolean),
+
       paisResidencia: String(form.get("paisResidencia")).trim(),
+
       proficienciaIdioma: proficiencies,
-      situacaoEscolaridade: form.get("situacao") as SchoolStatus,
-      nivelEscolaridade: form.get("escolaridade") as EducationLevel,
+
+      situacaoEscolaridade: form.get("situacao"),
+
+      nivelEscolaridade: form.get("escolaridade"),
     }
+
     try {
-      const saved = await api<Profile>(`/users/${user.id}/perfil`, {
+      const saved = await api(`/users/${user.id}/perfil`, {
         method: exists ? "PUT" : "POST",
+
         token,
+
         body,
       })
+
       setProfile(saved)
+
       setExists(true)
+
       setSuccess("Perfil salvo com sucesso.")
     } catch (saveError) {
       handleError(saveError)
@@ -116,24 +149,39 @@ export default function ProfilePage({
     }
   }
 
-  async function saveAccount(event: FormEvent<HTMLFormElement>) {
+  async function saveAccount(event) {
     event.preventDefault()
+
+    if (busy) return
+
     setBusy("account")
+
     setError("")
+
     setSuccess("")
+
     const form = new FormData(event.currentTarget)
+
     try {
-      const updated = await api<User>(`/users/${user.id}`, {
+      const updated = await api(`/users/${user.id}`, {
         method: "PUT",
+
         token,
+
         body: { nome: form.get("nome"), email: form.get("email") },
       })
+
+      if (updated.email !== user.email) {
+        onUnauthorized(
+          "Seu e-mail foi atualizado. Entre novamente com o novo endereço.",
+        )
+
+        return
+      }
+
       onUserChange(updated)
-      setSuccess(
-        updated.email !== user.email
-          ? "Conta atualizada. Como o e-mail mudou, entre novamente para renovar o token."
-          : "Conta atualizada.",
-      )
+
+      setSuccess("Conta atualizada.")
     } catch (saveError) {
       handleError(saveError)
     } finally {
@@ -141,29 +189,54 @@ export default function ProfilePage({
     }
   }
 
-  async function changePassword(event: FormEvent<HTMLFormElement>) {
+  async function changePassword(event) {
     event.preventDefault()
+
+    if (busy) return
+
     setBusy("password")
+
     setError("")
+
     setSuccess("")
+
     const formElement = event.currentTarget
+
     const form = new FormData(formElement)
+
     const next = String(form.get("newPassword"))
-    if (next !== form.get("confirmPassword")) {
-      setError("A confirmação não corresponde à nova senha.")
+
+    if (new TextEncoder().encode(next).length > 72) {
+      setError("A nova senha deve ter no máximo 72 bytes em UTF-8.")
+
       setBusy("")
+
       return
     }
+
+    if (next !== form.get("confirmPassword")) {
+      setError("A confirmação não corresponde à nova senha.")
+
+      setBusy("")
+
+      return
+    }
+
     try {
-      await api<void>(`/users/${user.id}/password`, {
+      await api(`/users/${user.id}/password`, {
         method: "PATCH",
+
         token,
+
         body: {
           currentPassword: form.get("currentPassword"),
+
           newPassword: next,
         },
       })
+
       formElement.reset()
+
       setSuccess("Senha alterada com sucesso.")
     } catch (saveError) {
       handleError(saveError)
@@ -276,19 +349,88 @@ export default function ProfilePage({
                     ))}
                   </select>
                 </label>
-                <label className="span-two">
-                  Proficiências{" "}
-                  <span className="field-help">
-                    Formato: en:B1, es:A2. Deixe vazio se não houver.
-                  </span>
-                  <input
-                    name="proficiencias"
-                    defaultValue={profile.proficienciaIdioma
-                      .map((item) => `${item.idioma}:${item.nivel}`)
-                      .join(", ")}
-                    placeholder="en:B1, es:A2"
-                  />
-                </label>
+                <fieldset className="span-two proficiency-fields">
+                  <legend>Proficiências em idiomas</legend>
+                  <p className="field-help">
+                    Adicione os idiomas que você já estuda. Você também pode
+                    deixar esta lista vazia.
+                  </p>
+                  {profile.proficienciaIdioma.map((item, index) => (
+                    <div className="proficiency-row" key={index}>
+                      <label>
+                        Idioma
+                        <input
+                          required
+                          pattern="[A-Za-z]{2}(-[A-Za-z]{2})?"
+                          placeholder="en ou pt-BR"
+                          value={item.idioma}
+                          onChange={(event) =>
+                            setProfile((current) => ({
+                              ...current,
+                              proficienciaIdioma:
+                                current.proficienciaIdioma.map((row, i) =>
+                                  i === index
+                                    ? { ...row, idioma: event.target.value }
+                                    : row,
+                                ),
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        Nível
+                        <select
+                          value={item.nivel}
+                          onChange={(event) =>
+                            setProfile((current) => ({
+                              ...current,
+                              proficienciaIdioma:
+                                current.proficienciaIdioma.map((row, i) =>
+                                  i === index
+                                    ? { ...row, nivel: event.target.value }
+                                    : row,
+                                ),
+                            }))
+                          }
+                        >
+                          {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
+                            <option key={level}>{level}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          setProfile((current) => ({
+                            ...current,
+                            proficienciaIdioma:
+                              current.proficienciaIdioma.filter(
+                                (_, i) => i !== index,
+                              ),
+                          }))
+                        }
+                      >
+                        Remover idioma
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setProfile((current) => ({
+                        ...current,
+                        proficienciaIdioma: [
+                          ...current.proficienciaIdioma,
+                          { idioma: "", nivel: "A1" },
+                        ],
+                      }))
+                    }
+                  >
+                    Adicionar idioma
+                  </Button>
+                </fieldset>
               </div>
               <div className="form-footer">
                 <Button type="submit" disabled={busy === "profile"}>

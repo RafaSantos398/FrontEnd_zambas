@@ -1,66 +1,76 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react"
-
-type IconName = "home" | "plans" | "course" | "profile" | "admin" | "plus" | "arrow" | "check" | "clock" | "calendar" | "logout" | "menu" | "close" | "warning" | "refresh" | "eye" | "edit"
-
-const paths: Record<IconName, ReactNode> = {
+const paths = {
   home: (
     <>
       <path d="m3 11 9-8 9 8" />
       <path d="M5 10v10h14V10M9 20v-6h6v6" />
     </>
   ),
+
   plans: (
     <>
       <rect x="4" y="3" width="16" height="18" rx="2" />
       <path d="M8 8h8M8 12h8M8 16h5" />
     </>
   ),
+
   course: (
     <>
       <path d="m3 10 9-5 9 5-9 5-9-5Z" />
       <path d="M7 12v5c3 2 7 2 10 0v-5M21 10v6" />
     </>
   ),
+
   profile: (
     <>
       <circle cx="12" cy="8" r="4" />
       <path d="M4 21c.8-4 3.5-6 8-6s7.2 2 8 6" />
     </>
   ),
+
   admin: (
     <>
       <path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z" />
       <path d="m9 12 2 2 4-4" />
     </>
   ),
+
   plus: <path d="M12 5v14M5 12h14" />,
+
   arrow: <path d="m9 18 6-6-6-6" />,
+
   check: <path d="m5 12 4 4L19 6" />,
+
   clock: (
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
     </>
   ),
+
   calendar: (
     <>
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M8 3v4M16 3v4M3 10h18" />
     </>
   ),
+
   logout: (
     <>
       <path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10" />
     </>
   ),
+
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+
   close: <path d="m6 6 12 12M18 6 6 18" />,
+
   warning: (
     <>
       <path d="M12 3 2.8 20h18.4L12 3Z" />
       <path d="M12 9v5M12 17h.01" />
     </>
   ),
+
   refresh: (
     <>
       <path d="M20 11a8 8 0 0 0-14.8-4L3 10" />
@@ -68,12 +78,14 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M21 19v-5h-5" />
     </>
   ),
+
   eye: (
     <>
       <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
       <circle cx="12" cy="12" r="2.5" />
     </>
   ),
+
   edit: (
     <>
       <path d="m14 5 5 5M4 20l3.5-.7L19 7.8 16.2 5 4.7 16.5 4 20Z" />
@@ -81,7 +93,7 @@ const paths: Record<IconName, ReactNode> = {
   ),
 }
 
-export function Icon({ name, size = 20 }: { name: IconName size?: number }) {
+export function Icon({ name, size = 20 }) {
   return (
     <svg
       width={size}
@@ -99,7 +111,7 @@ export function Icon({ name, size = 20 }: { name: IconName size?: number }) {
   )
 }
 
-export function Logo({ light = false }: { light?: boolean }) {
+export function Logo({ light = false }) {
   return (
     <img
       className={`logo ${light ? "logo-light" : ""}`}
@@ -109,7 +121,7 @@ export function Logo({ light = false }: { light?: boolean }) {
   )
 }
 
-export function Bear({ className = "" }: { className?: string }) {
+export function Bear({ className = "" }) {
   return (
     <svg
       className={`bear ${className}`}
@@ -181,13 +193,14 @@ export function Bear({ className = "" }: { className?: string }) {
 
 export function Button({
   variant = "primary",
+
   icon,
+
   children,
+
   className = "",
+
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger"
-  icon?: IconName
 }) {
   return (
     <button className={`button button-${variant} ${className}`} {...props}>
@@ -197,13 +210,7 @@ export function Button({
   )
 }
 
-export function StatusBadge({
-  label,
-  status,
-}: {
-  label: string
-  status: string
-}) {
+export function StatusBadge({ label, status }) {
   const kind = status.includes("CONCLUID")
     ? "success"
     : status === "EM_ANDAMENTO"
@@ -211,6 +218,7 @@ export function StatusBadge({
       : status === "CANCELADO"
         ? "danger"
         : "neutral"
+
   return (
     <span className={`status status-${kind}`}>
       <span aria-hidden="true" />
@@ -219,15 +227,7 @@ export function StatusBadge({
   )
 }
 
-export function EmptyState({
-  title,
-  text,
-  action,
-}: {
-  title: string
-  text: string
-  action?: ReactNode
-}) {
+export function EmptyState({ title, text, action }) {
   return (
     <div className="empty">
       <Bear className="empty-bear" />
@@ -240,13 +240,7 @@ export function EmptyState({
   )
 }
 
-export function Notice({
-  kind = "error",
-  children,
-}: {
-  kind?: "error" | "success" | "info"
-  children: ReactNode
-}) {
+export function Notice({ kind = "error", children }) {
   return (
     <div
       className={`notice notice-${kind}`}
@@ -262,7 +256,7 @@ export function Notice({
   )
 }
 
-export function Spinner({ label = "Carregando" }: { label?: string }) {
+export function Spinner({ label = "Carregando" }) {
   return (
     <div className="loading" role="status">
       <span className="spinner" />

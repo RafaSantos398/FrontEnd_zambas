@@ -1,5 +1,7 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+
 import { api, ApiError, getErrorMessage } from "./api"
+
 import {
   Button,
   EmptyState,
@@ -8,77 +10,90 @@ import {
   Spinner,
   StatusBadge,
 } from "./components"
-import type {
-  Course,
-  LanguageLevel,
-  Plan,
-  PlanStatus,
-  Preparation,
-  Task,
-} from "./types"
+
+import { useDialog } from "./useDialog"
+
 import { labels } from "./types"
 
-interface Props {
-  plan: Plan
-  token: string
-  onBack: () => void
-  onPlanChange: (plan: Plan) => void
-  onUnauthorized: () => void
-}
+const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
-const levels: LanguageLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
-
-function localDate(date: string | null) {
+function localDate(date) {
   if (!date) return "Sem prazo"
+
   const [year, month, day] = date.split("-")
+
   return `${day}/${month}/${year}`
 }
 
 export default function PlanDetail({
   plan,
+
   token,
+
   onBack,
+
   onPlanChange,
+
   onUnauthorized,
-}: Props) {
-  const [tab, setTab] = useState<"summary" | "course" | "tasks" | "language">(
-    "summary",
-  )
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [preparations, setPreparations] = useState<Preparation[]>([])
-  const [courses, setCourses] = useState<Course[]>([])
+}) {
+  const [tab, setTab] = useState("summary")
+
+  const [tasks, setTasks] = useState([])
+
+  const [preparations, setPreparations] = useState([])
+
+  const [courses, setCourses] = useState([])
+
   const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState<string | null>(null)
+
+  const [busy, setBusy] = useState(null)
+
   const [error, setError] = useState("")
+
   const [success, setSuccess] = useState("")
-  const [courseId, setCourseId] = useState("")
+
+  const [courseId, setCourseId] = useState(
+    plan.cursoId ? String(plan.cursoId) : "",
+  )
+
+  const [editingPreparation, setEditingPreparation] = useState(null)
+
   const [showPreparation, setShowPreparation] = useState(false)
 
+  const dialogRef = useDialog(() => setShowPreparation(false), showPreparation)
+
   const guard = useCallback(
-    (error: unknown) => {
+    (error) => {
       if (error instanceof ApiError && error.status === 401) {
         onUnauthorized()
+
         return
       }
+
       setError(getErrorMessage(error))
     },
+
     [onUnauthorized],
   )
 
   const load = useCallback(async () => {
     setLoading(true)
+
     setError("")
+
     try {
       const [taskData, prepData, courseData] = await Promise.all([
-        api<Task[]>(`/planos-intercambio/${plan.id}/tarefas`, { token }),
-        api<Preparation[]>(
-          `/planos-intercambio/${plan.id}/preparacoes-idioma`,
-          { token },
-        ),
-        api<Course[]>("/cursos", { token }),
+        api(`/planos-intercambio/${plan.id}/tarefas`, { token }),
+
+        api(`/planos-intercambio/${plan.id}/preparacoes-idioma`, { token }),
+
+        api("/cursos", { token }),
       ])
+
       setTasks(taskData)
+
       setPreparations(prepData)
+
       setCourses(
         courseData.filter(
           (course) =>
@@ -97,29 +112,34 @@ export default function PlanDetail({
   }, [load])
 
   const completed = tasks.filter((task) => task.status === "CONCLUIDA").length
+
   const progress = tasks.length
     ? Math.round((completed / tasks.length) * 100)
     : 0
+
   const money =
     plan.orcamentoTotal == null
       ? "Não informado"
       : new Intl.NumberFormat("pt-BR", {
           style: "currency",
+
           currency: plan.moeda || "BRL",
         }).format(plan.orcamentoTotal)
 
-  async function mutate<T>(
-    key: string,
-    request: () => Promise<T>,
-    update: (value: T) => void,
-    message: string,
-  ) {
+  async function mutate(key, request, update, message) {
+    if (busy) return
+
     setBusy(key)
+
     setError("")
+
     setSuccess("")
+
     try {
       const value = await request()
+
       update(value)
+
       setSuccess(message)
     } catch (mutationError) {
       guard(mutationError)
@@ -130,29 +150,40 @@ export default function PlanDetail({
 
   async function selectCourse() {
     if (!courseId) return
+
     await mutate(
       "course",
+
       () =>
-        api<Plan>(`/planos-intercambio/${plan.id}/curso`, {
+        api(`/planos-intercambio/${plan.id}/curso`, {
           method: "PATCH",
+
           token,
+
           body: { cursoId: Number(courseId) },
         }),
+
       onPlanChange,
+
       "Curso selecionado. Agora você pode gerar o checklist.",
     )
   }
 
-  async function changePlanStatus(status: PlanStatus) {
+  async function changePlanStatus(status) {
     await mutate(
       "plan-status",
+
       () =>
-        api<Plan>(`/planos-intercambio/${plan.id}/status`, {
+        api(`/planos-intercambio/${plan.id}/status`, {
           method: "PATCH",
+
           token,
+
           body: { status },
         }),
+
       onPlanChange,
+
       "Status do plano atualizado.",
     )
   }
@@ -160,109 +191,149 @@ export default function PlanDetail({
   async function generateTasks() {
     await mutate(
       "generate",
+
       () =>
-        api<Task[]>(`/planos-intercambio/${plan.id}/tarefas/gerar-checklist`, {
+        api(`/planos-intercambio/${plan.id}/tarefas/gerar-checklist`, {
           method: "POST",
+
           token,
         }),
+
       setTasks,
+
       "Checklist sincronizado sem perder o progresso existente.",
     )
   }
 
-  async function taskAction(
-    task: Task,
-    action: "iniciar" | "concluir" | "reabrir",
-  ) {
+  async function taskAction(task, action) {
     await mutate(
       `task-${task.id}`,
+
       () =>
-        api<Task>(
-          `/planos-intercambio/${plan.id}/tarefas/${task.id}/${action}`,
-          { method: "PATCH", token },
-        ),
+        api(`/planos-intercambio/${plan.id}/tarefas/${task.id}/${action}`, {
+          method: "PATCH",
+
+          token,
+        }),
+
       (updated) =>
         setTasks((current) =>
           current.map((item) => (item.id === updated.id ? updated : item)),
         ),
+
       action === "concluir"
         ? "Tarefa concluída. Mais uma etapa na mochila!"
         : "Tarefa atualizada.",
     )
   }
 
-  async function setDeadline(task: Task, prazo: string | null) {
+  async function setDeadline(task, prazo) {
     await mutate(
       `task-${task.id}`,
+
       () =>
-        api<Task>(`/planos-intercambio/${plan.id}/tarefas/${task.id}/prazo`, {
+        api(`/planos-intercambio/${plan.id}/tarefas/${task.id}/prazo`, {
           method: "PATCH",
+
           token,
+
           body: { prazo },
         }),
+
       (updated) =>
         setTasks((current) =>
           current.map((item) => (item.id === updated.id ? updated : item)),
         ),
+
       prazo ? "Prazo definido." : "Prazo removido.",
     )
   }
 
-  async function preparationAction(
-    item: Preparation,
-    action: "iniciar" | "concluir",
-  ) {
+  async function preparationAction(item, action) {
     await mutate(
       `prep-${item.id}`,
+
       () =>
-        api<Preparation>(
+        api(
           `/planos-intercambio/${plan.id}/preparacoes-idioma/${item.id}/${action}`,
+
           { method: "PATCH", token },
         ),
+
       (updated) =>
         setPreparations((current) =>
           current.map((prep) => (prep.id === updated.id ? updated : prep)),
         ),
+
       "Preparação atualizada.",
     )
   }
 
-  async function createPreparation(event: FormEvent<HTMLFormElement>) {
+  async function createPreparation(event) {
     event.preventDefault()
+
+    if (busy) return
+
     const form = new FormData(event.currentTarget)
+
     const body = {
       idioma: String(form.get("idioma")).trim(),
+
       nivelAlvo: form.get("nivelAlvo"),
+
       dataMeta: form.get("dataMeta"),
+
       minutosSemanaisPlanejados: Number(form.get("minutos")),
     }
+
     await mutate(
       "new-preparation",
+
       () =>
-        api<Preparation>(`/planos-intercambio/${plan.id}/preparacoes-idioma`, {
-          method: "POST",
-          token,
-          body,
-        }),
+        api(
+          `/planos-intercambio/${plan.id}/preparacoes-idioma${
+            editingPreparation ? "/" + editingPreparation.id : ""
+          }`,
+
+          {
+            method: editingPreparation ? "PUT" : "POST",
+
+            token,
+
+            body,
+          },
+        ),
+
       (created) => {
-        setPreparations((current) => [...current, created])
+        setPreparations((current) =>
+          editingPreparation
+            ? current.map((item) => (item.id === created.id ? created : item))
+            : [...current, created],
+        )
+
         setShowPreparation(false)
       },
-      "Preparação adicionada.",
+
+      editingPreparation ? "Preparação salva." : "Preparação adicionada.",
     )
   }
 
   const taskGroups = useMemo(
     () =>
-      ([
+      [
         ["EM_ANDAMENTO", "Em andamento"],
+
         ["PENDENTE", "Pendentes"],
+
         ["CONCLUIDA", "Concluídas"],
-      ] as const).map(([status, title]) => ({
+      ].map(([status, title]) => ({
         status,
+
         title,
+
         items: tasks.filter((task) => task.status === status),
       })),
+
     [tasks],
   )
 
@@ -283,9 +354,7 @@ export default function PlanDetail({
           Status do plano
           <select
             value={plan.status}
-            onChange={(event) =>
-              void changePlanStatus(event.target.value as PlanStatus)
-            }
+            onChange={(event) => void changePlanStatus(event.target.value)}
             disabled={busy === "plan-status"}
           >
             {Object.entries(labels.plan).map(([value, label]) => (
@@ -297,19 +366,23 @@ export default function PlanDetail({
         </label>
       </header>
 
-      {error && <Notice>{error}</Notice>}
+      {error && !showPreparation && <Notice>{error}</Notice>}
       {success && <Notice kind="success">{success}</Notice>}
 
       <nav className="tabs" aria-label="Seções do plano">
-        {([
+        {[
           ["summary", "Resumo"],
+
           ["course", "Curso"],
+
           [
             "tasks",
+
             `Checklist${tasks.length ? ` (${completed}/${tasks.length})` : ""}`,
           ],
+
           ["language", "Preparação de idioma"],
-        ] as const).map(([value, label]) => (
+        ].map(([value, label]) => (
           <button
             key={value}
             className={tab === value ? "active" : ""}
@@ -397,14 +470,16 @@ export default function PlanDetail({
                   <h2>Curso do intercâmbio</h2>
                 </div>
               </div>
-              {plan.cursoSelecionado ? (
+              {plan.cursoSelecionado && (
                 <Notice kind="info">
-                  Curso selecionado. A API não devolve o identificador ou nome
-                  do curso no plano; por isso, esses dados não podem ser
-                  reconstruídos após recarregar. A troca fica bloqueada depois
-                  da geração de tarefas.
+                  Curso selecionado:{" "}
+                  <strong>{plan.cursoNome || "Curso definido"}</strong>.{" "}
+                  {tasks.length > 0
+                    ? "O curso não pode ser alterado depois da geração de tarefas."
+                    : "Você pode trocar o curso antes de gerar tarefas."}
                 </Notice>
-              ) : courses.length ? (
+              )}
+              {tasks.length > 0 ? null : courses.length ? (
                 <div className="course-picker">
                   <label>
                     Selecione um curso ativo
@@ -425,6 +500,7 @@ export default function PlanDetail({
                       const course = courses.find(
                         (item) => item.id === Number(courseId),
                       )
+
                       return course ? (
                         <div className="course-preview">
                           <strong>{course.nome}</strong>
@@ -508,6 +584,7 @@ export default function PlanDetail({
                                 onChange={(event) =>
                                   void setDeadline(
                                     task,
+
                                     event.target.value || null,
                                   )
                                 }
@@ -561,7 +638,14 @@ export default function PlanDetail({
                   <span className="panel-kicker">Preparação contínua</span>
                   <h2>Idioma</h2>
                 </div>
-                <Button icon="plus" onClick={() => setShowPreparation(true)}>
+                <Button
+                  icon="plus"
+                  onClick={() => {
+                    setEditingPreparation(null)
+
+                    setShowPreparation(true)
+                  }}
+                >
                   Nova preparação
                 </Button>
               </div>
@@ -570,7 +654,13 @@ export default function PlanDetail({
                   title="Nenhuma preparação cadastrada"
                   text="Defina o idioma, seu nível-alvo e uma meta semanal para começar."
                   action={
-                    <Button onClick={() => setShowPreparation(true)}>
+                    <Button
+                      onClick={() => {
+                        setEditingPreparation(null)
+
+                        setShowPreparation(true)
+                      }}
+                    >
                       Criar preparação
                     </Button>
                   }
@@ -599,6 +689,17 @@ export default function PlanDetail({
                         semana
                       </p>
                       <div className="card-actions">
+                        <Button
+                          variant="secondary"
+                          icon="edit"
+                          onClick={() => {
+                            setEditingPreparation(item)
+
+                            setShowPreparation(true)
+                          }}
+                        >
+                          Editar preparação
+                        </Button>
                         {item.status === "NAO_INICIADA" && (
                           <Button
                             onClick={() =>
@@ -637,6 +738,7 @@ export default function PlanDetail({
         >
           <div
             className="modal"
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="prep-title"
@@ -649,8 +751,11 @@ export default function PlanDetail({
             >
               <Icon name="close" />
             </button>
-            <span className="panel-kicker">Nova meta</span>
+            <span className="panel-kicker">
+              {editingPreparation ? "Editar meta" : "Nova meta"}
+            </span>
             <h2 id="prep-title">Preparação de idioma</h2>
+            {error && <Notice>{error}</Notice>}
             <form
               className="form-grid"
               onSubmit={(event) => void createPreparation(event)}
@@ -659,6 +764,7 @@ export default function PlanDetail({
                 Idioma{" "}
                 <input
                   name="idioma"
+                  defaultValue={editingPreparation?.idioma || ""}
                   required
                   pattern="[A-Za-z]{2}(-[A-Za-z]{2})?"
                   placeholder="Ex.: en ou pt-BR"
@@ -666,19 +772,31 @@ export default function PlanDetail({
               </label>
               <label>
                 Nível-alvo{" "}
-                <select name="nivelAlvo" defaultValue="B2">
+                <select
+                  name="nivelAlvo"
+                  defaultValue={editingPreparation?.nivelAlvo || "B2"}
+                >
                   {levels.map((level) => (
                     <option key={level}>{level}</option>
                   ))}
                 </select>
               </label>
               <label>
-                Data-meta <input name="dataMeta" required type="date" />
+                Data-meta{" "}
+                <input
+                  name="dataMeta"
+                  defaultValue={editingPreparation?.dataMeta || ""}
+                  required
+                  type="date"
+                />
               </label>
               <label>
                 Minutos por semana{" "}
                 <input
                   name="minutos"
+                  defaultValue={
+                    editingPreparation?.minutosSemanaisPlanejados || ""
+                  }
                   required
                   type="number"
                   min="1"
@@ -696,7 +814,9 @@ export default function PlanDetail({
                 <Button type="submit" disabled={busy === "new-preparation"}>
                   {busy === "new-preparation"
                     ? "Salvando…"
-                    : "Adicionar preparação"}
+                    : editingPreparation
+                      ? "Salvar preparação"
+                      : "Adicionar preparação"}
                 </Button>
               </div>
             </form>

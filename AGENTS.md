@@ -1,37 +1,37 @@
-# figma-make-app
+# Berxy — instruções do repositório
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+## Escopo
 
-## Development Server
+O usuário exige manter as tecnologias dentro do material da disciplina e do
+escopo aprovado do projeto. Referência:
+https://ezambomsantana.github.io/arquitetura-objetos-site/
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
+O frontend é React com JavaScript, HTML e CSS. A exportação inicial do Figma
+usava TypeScript/Tailwind; ela foi convertida por solicitação do usuário.
+Não reintroduzir TypeScript, Tailwind, bibliotecas de UI, autenticação externa
+ou outro framework sem uma instrução explícita do usuário.
 
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+## Estrutura e execução
 
-## Project Structure
+- src/main.jsx monta src/App.jsx e importa src/index.css.
+- src/App.jsx contém navegação e autenticação.
+- src/PlanDetail.jsx contém os fluxos do plano.
+- src/ProfilePage.jsx contém perfil e conta.
+- src/AdminPage.jsx contém catálogos e associação de modelos a cursos.
+- src/api.js centraliza fetch e Bearer; o backend não usa sessão por cookie.
+- vite.config.js configura React/Vite; usar npm ci e npm run dev.
+- O servidor local usa 127.0.0.1:5173. Verificar se está rodando antes de abrir
+  outro processo; não presumir o ambiente de preview do Figma.
+- npm test executa os testes nativos do Node; npm run build gera dist/.
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
+## Integração
 
-- `src/main.tsx` - React entrypoint; imports `src/index.css` and mounts `src/App.tsx` into the `#root` element
-- `src/App.tsx` - Primary application component and the usual starting point for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
-- `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+A base padrão é http://localhost:8080, configurável por VITE_API_URL.
+FRONTEND_ORIGINS é uma variável do backend para permitir origens explícitas.
+Não incluir credenciais do banco nem JWT_SECRET no código do frontend.
 
-## Dependencies
-
-- Runtime: React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
-
-## Styling
-
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss';`. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
-
-`src/main.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
-
-Tailwind emits utility classes in `@layer utilities`, and CSS outside any cascade layer overrides every layer regardless of specificity. Put global element styles, such as resets and defaults for `body`, headings, `button`, or `input`, inside `@layer base { ... }` so utility classes on those elements still apply. Tailwind's Preflight already applies `box-sizing: border-box`, removes default margins, and sets `font: inherit` on form controls, so do not repeat those rules.
+Preservar os contratos reais do backend; não simular endpoints ou persistência.
+As respostas de plano incluem cursoSelecionado, cursoId e cursoNome.
+O logout limpa dados privados, formulários e resultados da sessão anterior.
+Registre alterações de contrato e testes no README. Docker está configurado;
+consulte DOCKER.md. A publicação pública ainda é uma próxima etapa.

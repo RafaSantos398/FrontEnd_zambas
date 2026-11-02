@@ -1,0 +1,7 @@
+# Somente validação local; não utiliza o PostgreSQL do Render.
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:h2:mem:berxy_docker
+      JWT_SECRET: chave-publica-apenas-para-validacao-local-do-docker-berxy
