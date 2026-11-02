@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { api, ApiError, getErrorMessage } from "./api"
 
@@ -16,6 +16,7 @@ import { useDialog } from "./useDialog"
 import { labels } from "./types"
 import ChecklistTools from "./ChecklistTools"
 import FinancePage from "./FinancePage"
+import TaskBoard from "./TaskBoard"
 
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
@@ -146,8 +147,10 @@ export default function PlanDetail({
       update(value)
 
       setSuccess(message)
+      return true
     } catch (mutationError) {
       guard(mutationError)
+      return false
     } finally {
       setBusy(null)
     }
@@ -210,15 +213,16 @@ export default function PlanDetail({
     )
   }
 
-  async function taskAction(task, action) {
-    await mutate(
+  async function moveTask(task, status) {
+    return await mutate(
       `task-${task.id}`,
 
       () =>
-        api(`/planos-intercambio/${plan.id}/tarefas/${task.id}/${action}`, {
+        api(`/planos-intercambio/${plan.id}/tarefas/${task.id}/status`, {
           method: "PATCH",
 
           token,
+          body: { status },
         }),
 
       (updated) =>
@@ -226,9 +230,7 @@ export default function PlanDetail({
           current.map((item) => (item.id === updated.id ? updated : item)),
         ),
 
-      action === "concluir"
-        ? "Tarefa concluída. Mais uma etapa na mochila!"
-        : "Tarefa atualizada.",
+      `Tarefa movida para ${labels.task[status].toLowerCase()}.`,
     )
   }
 
@@ -332,25 +334,6 @@ export default function PlanDetail({
       editingPreparation ? "Preparação salva." : "Preparação adicionada.",
     )
   }
-
-  const taskGroups = useMemo(
-    () =>
-      [
-        ["EM_ANDAMENTO", "Em andamento"],
-
-        ["PENDENTE", "Pendentes"],
-
-        ["CONCLUIDA", "Concluídas"],
-      ].map(([status, title]) => ({
-        status,
-
-        title,
-
-        items: tasks.filter((task) => task.status === status),
-      })),
-
-    [tasks],
-  )
 
   return (
     <section className="detail-page">
@@ -562,7 +545,7 @@ export default function PlanDetail({
                     : "Adicionar tarefas do curso"}
                 </Button>
               </div>
-              <ChecklistTools plan={plan} token={token} onTasksChange={setTasks}
+              <ChecklistTools plan={plan} token={token} hasTasks={tasks.length > 0} onTasksChange={setTasks}
                 onError={guard} editingTask={editingTask} onEditDone={() => setEditingTask(null)} />
               {!tasks.length ? (
                 <EmptyState
@@ -570,79 +553,9 @@ export default function PlanDetail({
                   text="Adicione um ou mais temas acima ou use Nova tarefa para montar um checklist pessoal."
                 />
               ) : (
-                <div className="task-board">
-                  {taskGroups.map((group) => (
-                    <section className="task-column" key={group.status}>
-                      <h3>
-                        {group.title} <span>{group.items.length}</span>
-                      </h3>
-                      {group.items.map((task) => (
-                        <article className="task-card" key={task.id}>
-                          <StatusBadge
-                            label={labels.task[task.status]}
-                            status={task.status}
-                          />
-                          <h4>{task.titulo}</h4>
-                          <small>{labels.category[task.categoria] || "Outros"} · {task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</small>
-                          {task.descricao && <p>{task.descricao}</p>}
-                          <div className="deadline">
-                            <Icon name="calendar" size={17} />
-                            <label>
-                              Prazo{" "}
-                              <input
-                                type="date"
-                                value={task.prazo || ""}
-                                onChange={(event) =>
-                                  void setDeadline(
-                                    task,
-
-                                    event.target.value || null,
-                                  )
-                                }
-                                disabled={busy === `task-${task.id}`}
-                              />
-                            </label>
-                          </div>
-                          <div className="card-actions">
-                            <Button variant="secondary" disabled={!!busy} onClick={() => setEditingTask(task)}>Editar</Button>
-                            {removingTask === task.id ? <>
-                              <Button variant="secondary" disabled={!!busy} onClick={() => void removeTask(task)}>Confirmar remoção</Button>
-                              <Button variant="secondary" disabled={!!busy} onClick={() => setRemovingTask(null)}>Manter tarefa</Button>
-                            </> : <Button variant="secondary" disabled={!!busy} onClick={() => setRemovingTask(task.id)}>Remover</Button>}
-                            {task.status === "PENDENTE" && (
-                              <Button
-                                variant="secondary"
-                                onClick={() => void taskAction(task, "iniciar")}
-                                disabled={busy === `task-${task.id}`}
-                              >
-                                Iniciar
-                              </Button>
-                            )}
-                            {task.status !== "CONCLUIDA" && (
-                              <Button
-                                onClick={() =>
-                                  void taskAction(task, "concluir")
-                                }
-                                disabled={busy === `task-${task.id}`}
-                              >
-                                Concluir
-                              </Button>
-                            )}
-                            {task.status === "CONCLUIDA" && (
-                              <Button
-                                variant="secondary"
-                                onClick={() => void taskAction(task, "reabrir")}
-                                disabled={busy === `task-${task.id}`}
-                              >
-                                Reabrir
-                              </Button>
-                            )}
-                          </div>
-                        </article>
-                      ))}
-                    </section>
-                  ))}
-                </div>
+                <TaskBoard tasks={tasks} busy={busy} onMove={moveTask} onEdit={setEditingTask}
+                  onRemove={removeTask} onDeadline={setDeadline} removingTask={removingTask}
+                  onRemovingChange={setRemovingTask} />
               )}
             </div>
           )}

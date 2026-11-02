@@ -3,11 +3,12 @@ import { api, getErrorMessage } from "./api"
 import { Button, Notice } from "./components"
 import { labels } from "./types"
 
-export default function ChecklistTools({ plan, token, onTasksChange, onError, editingTask, onEditDone }) {
+export default function ChecklistTools({ plan, token, hasTasks, onTasksChange, onError, editingTask, onEditDone }) {
   const [themes, setThemes] = useState([])
   const [selected, setSelected] = useState([])
   const [busy, setBusy] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [themesOpen, setThemesOpen] = useState(!hasTasks)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const editorRef = useRef(null)
@@ -33,6 +34,7 @@ export default function ChecklistTools({ plan, token, onTasksChange, onError, ed
         token, method: "POST", body: { temas: selected },
       })
       onTasksChange(tasks)
+      setThemesOpen(false)
       setMessage("Temas adicionados. Suas tarefas, prazos e conclusões foram preservados.")
     } catch (error) { setError(getErrorMessage(error)); onError(error) }
     finally { setBusy(false) }
@@ -57,11 +59,13 @@ export default function ChecklistTools({ plan, token, onTasksChange, onError, ed
 
   return <section className="panel content-panel checklist-tools">
     <div className="section-heading"><div><h3>Monte o checklist do seu jeito</h3>
-      <p>Escolha temas, combine sugestões e crie suas tarefas. Nenhum curso é obrigatório.</p></div>
+      <p>Adicione temas ou tarefas próprias quando precisar.</p></div>
       <Button icon="plus" disabled={busy} onClick={() => { onEditDone(); setShowForm(true); setError("") }}>Nova tarefa</Button>
     </div>
     {error && <Notice>{error}</Notice>}
     {message && <Notice kind="success">{message}</Notice>}
+    <details className="theme-picker" open={themesOpen} onToggle={event => setThemesOpen(event.currentTarget.open)}>
+    <summary>Adicionar checklists por tema</summary>
     <fieldset className="theme-options" disabled={busy}><legend>Temas para adicionar ao plano</legend>
       {themes.map(item => <label key={item.tema} className="theme-choice">
         <input type="checkbox" checked={selected.includes(item.tema)} onChange={event => setSelected(current =>
@@ -71,6 +75,7 @@ export default function ChecklistTools({ plan, token, onTasksChange, onError, ed
     </fieldset>
     <Button disabled={busy || !selected.length} onClick={() => void generate()}>{busy ? "Salvando…" : "Adicionar temas selecionados"}</Button>
     <p className="help-text">Adicionar o mesmo tema novamente não duplica tarefas. Uma sugestão removida pode voltar se você adicionar esse tema de novo.</p>
+    </details>
     {(showForm || editingTask) && <form ref={editorRef} className="task-editor" onSubmit={save} key={editingTask?.id || "nova"}>
       <h3>{editingTask ? "Editar tarefa" : "Criar minha tarefa"}</h3>
       <label>Título<input name="titulo" maxLength={200} required defaultValue={editingTask?.titulo || ""} /></label>

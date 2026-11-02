@@ -100,6 +100,21 @@ npm run build
 
 ## Checklists independentes de curso e finanças
 
+O quadro agora mostra só os títulos das tarefas recolhidas. Clicar abre a
+descrição, o prazo, a edição e a remoção. Arrastar pelo título muda a tarefa
+entre Pendentes, Em andamento e Concluídas; o seletor Mover para oferece a
+mesma operação por teclado ou no celular. A mudança só aparece após a API
+confirmar, e falhas preservam a coluna anterior. Os temas ficam recolhidos
+quando o plano já tem tarefas. Implementação em src/TaskBoard.jsx, com React
+e a API nativa de arrastar e soltar, sem bibliotecas adicionais.
+
+Esta atualização usa PATCH /planos-intercambio/{id}/tarefas/{idTarefa}/status,
+com {"status":"EM_ANDAMENTO"}, por exemplo. O backend faz a mudança em uma
+transação, preserva a data de uma conclusão repetida e limpa essa data ao sair
+de Concluída. Nenhuma alteração de esquema é necessária. Validação: 69 testes
+do backend, 8 do frontend, build Docker e arraste real no navegador, incluindo
+retorno de Concluída para Pendente, abertura por teclado e seletor de status.
+
 O plano permite escolher seis temas com 24 sugestões, mesmo com o catálogo de
 cursos vazio. Nova tarefa cria itens próprios; Editar e Remover permitem adaptar
 o checklist. Adicionar o mesmo tema mantém tarefas, prazos e conclusões existentes.
