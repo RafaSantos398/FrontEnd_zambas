@@ -162,3 +162,20 @@ o build que será publicado.
 O perfil dev do backend usa H2 em memória e perde dados ao reiniciar. Para
 persistir dados de uso, iniciar o backend no perfil prod com PostgreSQL,
 DB_URL, DB_USERNAME, DB_PASSWORD e JWT_SECRET configurados fora do frontend.
+
+## Caderno das tarefas
+
+“Checklist → expandir tarefa → Abrir anotações” abre uma página própria e mantém
+o quadro compacto. O caderno aceita até 10.000 caracteres, texto livre e modelo
+opcional por tema. O modelo só preenche texto vazio. Salvar é explícito; a página
+mostra alterações pendentes, confirmação e horário do último salvamento. Voltar
+ao checklist ou fechar/recarregar a aba avisa quando há texto não salvo.
+
+Integração: GET/PUT `/planos-intercambio/{planoId}/tarefas/{tarefaId}/anotacoes`,
+Bearer JWT. PUT `{ "texto": "..." }`; retorno `{ tarefaId, texto, atualizadoEm }`.
+Não usa localStorage nem simula persistência. Publicar somente depois da migração
+aditiva e do deploy correspondente do backend.
+
+Validação: build Docker e 8 testes do frontend aprovados. Navegador local/H2:
+modelo de moradia, gravação, recarga com novo login, texto preservado, modelo
+bloqueado quando há texto e confirmação de saída pelo menu com opção de continuar.

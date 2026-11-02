@@ -8,7 +8,7 @@ const columns = [
   ["CONCLUIDA", "Concluídas"],
 ]
 
-export default function TaskBoard({ tasks, busy, onMove, onEdit, onRemove, onDeadline, removingTask, onRemovingChange }) {
+export default function TaskBoard({ tasks, busy, onMove, onEdit, onRemove, onDeadline, removingTask, onRemovingChange, onNotes }) {
   const [expanded, setExpanded] = useState(null)
   const [dragged, setDragged] = useState(null)
   const [over, setOver] = useState(null)
@@ -61,6 +61,7 @@ export default function TaskBoard({ tasks, busy, onMove, onEdit, onRemove, onDea
             onDragStart={event => { event.preventDefault(); event.stopPropagation() }}>
             <div className="task-tags"><span>{labels.category[task.categoria] || "Outros"}</span><span>{task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</span></div>
             {task.descricao && <p>{task.descricao}</p>}
+            <button className="notes-link" disabled={!!busy} onClick={() => onNotes(task)}>Abrir anotações →</button>
             <div className="task-field"><label htmlFor={`task-status-${task.id}`}>Mover para</label>
             <select id={`task-status-${task.id}`} value={task.status} disabled={!!busy}
               onChange={event => void move(task, event.target.value)}>

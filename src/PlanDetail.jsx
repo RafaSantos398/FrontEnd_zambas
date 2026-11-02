@@ -17,6 +17,7 @@ import { labels } from "./types"
 import ChecklistTools from "./ChecklistTools"
 import FinancePage from "./FinancePage"
 import TaskBoard from "./TaskBoard"
+import TaskNotesPage from "./TaskNotesPage"
 
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
@@ -29,6 +30,7 @@ function localDate(date) {
 }
 
 export default function PlanDetail({
+  registerNavigationGuard,
   plan,
 
   token,
@@ -40,6 +42,7 @@ export default function PlanDetail({
   onUnauthorized,
 }) {
   const [tab, setTab] = useState("summary")
+  const [notesTask, setNotesTask] = useState(null)
 
   const [tasks, setTasks] = useState([])
   const [editingTask, setEditingTask] = useState(null)
@@ -335,6 +338,9 @@ export default function PlanDetail({
     )
   }
 
+  if (notesTask) return <TaskNotesPage key={notesTask.id} task={notesTask} plan={plan} token={token}
+    onUnauthorized={onUnauthorized} onBack={() => setNotesTask(null)} registerNavigationGuard={registerNavigationGuard} />
+
   return (
     <section className="detail-page">
       <button className="back-link" onClick={onBack}>
@@ -555,7 +561,7 @@ export default function PlanDetail({
               ) : (
                 <TaskBoard tasks={tasks} busy={busy} onMove={moveTask} onEdit={setEditingTask}
                   onRemove={removeTask} onDeadline={setDeadline} removingTask={removingTask}
-                  onRemovingChange={setRemovingTask} />
+                  onRemovingChange={setRemovingTask} onNotes={setNotesTask} />
               )}
             </div>
           )}

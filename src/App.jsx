@@ -598,6 +598,8 @@ export default function App() {
   const [token, setToken] = useState(null)
 
   const sessionToken = useRef(null)
+  const navigationGuard = useRef(null)
+  const registerNavigationGuard = useCallback(guard => { navigationGuard.current = guard }, [])
 
   const [user, setUser] = useState(null)
 
@@ -651,6 +653,7 @@ export default function App() {
   )
 
   function navigate(next) {
+    if (navigationGuard.current && !navigationGuard.current(() => navigate(next))) return
     setSelectedPlan(null)
 
     setEditingPlan(null)
@@ -695,6 +698,7 @@ export default function App() {
   }, [loadPlans, token])
 
   function logout() {
+    if (navigationGuard.current && !navigationGuard.current(() => logout())) return
     const previousToken = token
 
     logoutLocal("Você saiu da sua conta com segurança.")
@@ -789,6 +793,7 @@ export default function App() {
         <main className="app-main">
           <MobileHeader setOpen={setMenuOpen} open={menuOpen} />
           <PlanDetail
+            registerNavigationGuard={registerNavigationGuard}
             plan={selectedPlan}
             token={token}
             onBack={() => {
