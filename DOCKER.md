@@ -103,12 +103,13 @@ O frontend também foi publicado: **https://berxy.vercel.app**.
 Essa origem HTTPS foi adicionada a FRONTEND_ORIGINS no Render.
 Consulte DEPLOY-VERCEL.md para atualizar a publicação.
 
-## Validação em 02/11/2026
+## Validação atual
 
-- Build Linux aprovado: 58 testes do backend e 8 testes do frontend.
-- 20 verificações HTTP pelo proxy, usando H2 descartável, aprovadas:
-  autenticação, autorização, plano, perfil e preparação de idioma.
-- Containers de produção saudáveis, conexão PostgreSQL e validação de esquema
-  concluídas, página HTTP 200 e API protegida HTTP 401 sem token.
-- Configuração Nginx válida; backend executa com usuário 10001:10001.
-- Os testes que cadastram dados rodaram no H2, sem inserir fixtures no Render.
+Revisão de 02/11/2026: 72 testes do backend, 8 testes do frontend e builds Docker
+aprovados no modo isolado com H2. A produção usa PostgreSQL com validate; as migrações
+aditivas de temas/finanças e caderno já foram aplicadas. A revisão de escopo não exige
+nova migração. O frontend da Vercel chama diretamente a API HTTPS, sem Nginx ou /api.
+
+As instruções acima de criação do serviço referem-se à publicação inicial. Hoje,
+os dois repositórios entregam pela main; atualizar o serviço já existente no Render,
+sem criar outro. Ver DEPLOY-VERCEL.md e o manual do backend.
