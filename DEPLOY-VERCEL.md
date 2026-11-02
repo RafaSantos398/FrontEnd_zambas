@@ -45,6 +45,14 @@ tarefas de teste no PostgreSQL publicado nesta atualização.
 
 ## Atualizar o site
 
+Atualização do quadro compacto: código frontend cbba76d e API 103e82b.
+As tarefas recolhidas mostram apenas o título; o clique revela detalhes e
+ações. O arraste nativo no computador move entre as três colunas. O seletor
+Mover para oferece a mesma operação para teclado e celular. A seleção de
+temas é recolhível. Sem novas dependências ou alterações nas tabelas.
+Validação: 69 testes do backend, 8 do frontend e movimentação real no navegador,
+com consulta independente confirmando a persistência do status.
+
 Depois de testar as mudanças, enviá-las à main do repositório do frontend.
 A integração da Vercel gera uma nova publicação. Conferir o resultado em
 Deployments e testar o domínio principal antes da apresentação.
