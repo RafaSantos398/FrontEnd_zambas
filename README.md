@@ -14,6 +14,7 @@ Interface React do planejador de intercâmbio Berxy, em JavaScript e CSS.
 ## Funcionalidades integradas
 
 Cadastro/login JWT, conta/perfil e proficiências; planos com curso opcional;
+cursos pessoais criados pelo usuário, com etiquetas, datas e link; inclusão no cronograma de planos;
 catálogos administrativos; associação de modelos aos cursos; checklists por curso
 ou seis temas com 24 sugestões; tarefas próprias, prazos e movimentação de status;
 planejamento financeiro; preparação de idioma; caderno de anotações por tarefa.
@@ -52,8 +53,8 @@ npm test
 npm run build
 ```
 
-Oito testes do cliente HTTP e build aprovados na revisão de 02/11/2026. O backend
-correspondente passou nos 72 testes após simplificação de erros e validação de senha.
+Oito testes do cliente HTTP e build aprovados na revisão de 03/11/2026. O backend
+correspondente passou nos 74 testes após simplificação de erros e validação de senha.
 A Vercel acompanha main e publica automaticamente. Conferir Ready e o commit no
 painel antes de considerar a atualização concluída. [Guia Vercel](DEPLOY-VERCEL.md).
 
@@ -76,3 +77,21 @@ Não há cotação automática, recomendação de cursos, anexos, notificações
 Anotações não somam custos nem alteram finanças automaticamente. Duas abas não mesclam
 edições do mesmo caderno. O catálogo depende de cadastro ADMIN, mas os principais
 fluxos de organização funcionam sem curso. O primeiro acesso ao Render Free pode demorar.
+
+
+## Meus cursos
+
+O usuário cadastra e edita seus cursos, sem pedir a um administrador ou depender de
+instituição do catálogo. Pode combinar etiquetas Financeiro, Linguístico, Acadêmico,
+Profissional, Cultural e Outros, informar plataforma, link, idioma e datas. A listagem
+não mostra cursos pessoais de outras contas. Filtrar por etiqueta ajuda a organizar.
+
+Adicionar ao cronograma permite escolher um plano e cria uma etapa no checklist com
+prazo igual ao término previsto. Repetir a ação preserva a mesma etapa. Alterar o curso
+não sobrescreve datas, progresso ou anotações de etapas existentes: ajustar no checklist.
+Dentro do plano, Cursos mostra primeiro os cursos de apoio; curso principal do catálogo
+continua disponível em seção opcional recolhível. Cursos pessoais não exigem curso principal.
+
+Contrato: POST /cursos/pessoais, PUT /cursos/pessoais/{id}, GET /cursos (catálogo + próprios),
+POST /planos-intercambio/{id}/tarefas/curso com cursoId. Publicar após migração
+20261103-cursos-pessoais.sql e backend correspondente. Etiquetas/datas vêm da API real.

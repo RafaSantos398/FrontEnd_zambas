@@ -59,7 +59,7 @@ export default function TaskBoard({ tasks, busy, onMove, onEdit, onRemove, onDea
           </button></h4>
           <div id={`task-details-${task.id}`} hidden={expanded !== task.id} className="task-details"
             onDragStart={event => { event.preventDefault(); event.stopPropagation() }}>
-            <div className="task-tags"><span>{labels.category[task.categoria] || "Outros"}</span><span>{task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</span></div>
+            <div className="task-tags"><span>{labels.category[task.categoria] || "Outros"}</span><span>{task.cursoApoioId ? "Meu curso" : task.personalizada ? "Criada por você" : task.modeloOrigemId ? "Do curso" : "Sugestão por tema"}</span></div>
             {task.descricao && <p>{task.descricao}</p>}
             <button className="notes-link" disabled={!!busy} onClick={() => onNotes(task)}>Abrir anotações →</button>
             <div className="task-field"><label htmlFor={`task-status-${task.id}`}>Mover para</label>

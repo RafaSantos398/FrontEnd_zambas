@@ -18,6 +18,7 @@ import {
 } from "./components"
 
 import PlanDetail from "./PlanDetail"
+import CoursesPage from "./CoursesPage"
 
 import ProfilePage from "./ProfilePage"
 
@@ -518,80 +519,6 @@ function PlanForm({ plan, token, onClose, onSaved, onUnauthorized }) {
   )
 }
 
-function CoursesPage({ token, onUnauthorized }) {
-  const [courses, setCourses] = useState([])
-
-  const [loading, setLoading] = useState(true)
-
-  const [error, setError] = useState("")
-
-  useEffect(() => {
-    api("/cursos", { token })
-
-      .then(setCourses)
-
-      .catch((loadError) => {
-        if (loadError instanceof ApiError && loadError.status === 401)
-          onUnauthorized()
-        else setError(getErrorMessage(loadError))
-      })
-
-      .finally(() => setLoading(false))
-  }, [onUnauthorized, token])
-
-  return (
-    <section>
-      <header className="page-heading">
-        <div>
-          <span className="eyebrow">Catálogo</span>
-          <h1>Cursos</h1>
-          <p>
-            Explore os cursos cadastrados e ativos para encontrar um caminho
-            compatível.
-          </p>
-        </div>
-      </header>
-      {error && <Notice>{error}</Notice>}
-      {loading ? (
-        <Spinner label="Carregando cursos" />
-      ) : courses.filter((item) => item.ativo).length ? (
-        <div className="course-grid">
-          {courses
-
-            .filter((item) => item.ativo)
-
-            .map((course) => (
-              <article className="panel course-card" key={course.id}>
-                <div className="course-icon">
-                  <Icon name="course" />
-                </div>
-                <span className="panel-kicker">
-                  {labels.exchange[course.tipoIntercambio]}
-                </span>
-                <h2>{course.nome}</h2>
-                <strong>{course.instituicaoNome}</strong>
-                <p>{course.descricao || "Sem descrição informada."}</p>
-                <footer>
-                  <span>{course.idioma || "Idioma não informado"}</span>
-                  <span>
-                    {course.duracaoMeses
-                      ? `${course.duracaoMeses} meses`
-                      : "Duração não informada"}
-                  </span>
-                </footer>
-              </article>
-            ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="Nenhum curso ativo"
-          text="Um administrador precisa cadastrar e ativar cursos antes que eles possam ser escolhidos em um plano."
-        />
-      )}
-    </section>
-  )
-}
-
 export default function App() {
   const [publicView, setPublicView] = useState("landing")
 
@@ -727,7 +654,7 @@ export default function App() {
 
     ["plans", "Meus planos", "plans"],
 
-    ["courses", "Cursos", "course"],
+    ["courses", "Meus cursos", "course"],
 
     ["profile", "Meu perfil", "profile"],
 

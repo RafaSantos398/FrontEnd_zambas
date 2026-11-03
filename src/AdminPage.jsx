@@ -86,7 +86,7 @@ export default function AdminPage({ token, onUnauthorized }) {
       )
 
       setCatalogs(
-        Object.fromEntries(keys.map((key, index) => [key, lists[index]])),
+        Object.fromEntries(keys.map((key, index) => [key, key === "courses" ? lists[index].filter(item => !item.pessoal) : lists[index]])),
       )
     } catch (failure) {
       handleError(failure)

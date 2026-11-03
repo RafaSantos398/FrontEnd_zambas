@@ -468,3 +468,31 @@ select, :is(.form-grid, .compact-field, .course-picker) select { background-imag
 .notes-save-state { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .85rem; color: #6f657c; margin: 10px 0 20px; }
 @media (max-width: 600px) { .notes-editor textarea { min-height: 300px; } .notes-editor .section-heading .button { width: 100%; } }
 .task-notes-page { display: grid; gap: 20px; }
+
+.personal-courses { display: grid; gap: 20px; }
+.course-filter { display: grid; gap: 8px; max-width: 320px; font-weight: 650; }
+.course-tag-picker { border: 1px solid #e3d5f5; border-radius: 12px; padding: 16px; margin: 0; min-width: 0; }
+.course-tag-picker legend { font-weight: 650; padding: 0 6px; }
+.course-tag-picker p { margin: 0 0 12px; font-size: .9rem; }
+.course-tag-picker > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.course-tag-picker label { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid #e3d5f5; border-radius: 10px; background: #faf7ff; }
+.course-tag-picker input { width: 18px; height: 18px; accent-color: #7434b9; }
+.personal-course { display: flex; flex-direction: column; gap: 12px; }
+.personal-course .task-tags { padding: 0; }
+.personal-course h3, .personal-course p { margin: 0; overflow-wrap: anywhere; }
+.personal-course .card-actions { margin-top: auto; flex-wrap: wrap; }
+.personal-course .card-actions .button { flex: 1; }
+.course-dates { display: flex; gap: 24px; margin: 6px 0; }
+.course-dates dt { font-size: .8rem; color: #756c82; }
+.course-dates dd { margin: 4px 0 0; }
+.course-schedule { display: grid; gap: 12px; border-top: 1px solid #e3d5f5; padding-top: 16px; }
+.course-schedule label { display: grid; gap: 8px; }
+.course-editor { max-width: 740px; }
+
+.course-section { display: grid; gap: 28px; }
+
+.personal-course .card-actions { display: grid; grid-template-columns: 1fr; }
+.personal-course .card-actions .button { min-height: 44px; }
+.course-editor { width: min(740px, calc(100vw - 32px)); }
+.course-section > details > summary { cursor: pointer; font-weight: 650; }
+.course-section > details[open] > summary { margin-bottom: 20px; }

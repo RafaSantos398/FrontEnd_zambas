@@ -18,6 +18,7 @@ import ChecklistTools from "./ChecklistTools"
 import FinancePage from "./FinancePage"
 import TaskBoard from "./TaskBoard"
 import TaskNotesPage from "./TaskNotesPage"
+import CoursesPage from "./CoursesPage"
 
 const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
@@ -106,7 +107,7 @@ export default function PlanDetail({
       setCourses(
         courseData.filter(
           (course) =>
-            course.ativo && course.tipoIntercambio === plan.tipoIntercambio,
+            !course.pessoal && course.ativo && course.tipoIntercambio === plan.tipoIntercambio,
         ),
       )
     } catch (loadError) {
@@ -377,7 +378,7 @@ export default function PlanDetail({
         {[
           ["summary", "Resumo"],
 
-          ["course", "Curso"],
+          ["course", "Cursos"],
 
           [
             "tasks",
@@ -466,7 +467,10 @@ export default function PlanDetail({
           )}
 
           {tab === "course" && (
-            <div className="panel content-panel">
+            <div className="content-stack course-section">
+            <CoursesPage token={token} onUnauthorized={onUnauthorized} plan={plan} onScheduled={task => setTasks(current => [...current.filter(item => item.id !== task.id), task])} />
+            <details className="panel content-panel" open={plan.cursoSelecionado || undefined}>
+              <summary>Curso principal do intercâmbio (opcional)</summary>
               <div className="section-heading">
                 <div>
                   <span className="panel-kicker">Catálogo real</span>
@@ -528,9 +532,10 @@ export default function PlanDetail({
               ) : (
                 <EmptyState
                   title="Nenhum curso compatível disponível"
-                  text="Ainda não há cursos ativos para este tipo. Você pode continuar nas abas Checklist, Finanças e Preparação de idioma sem escolher um curso."
+                  text="Você pode cadastrar seus cursos de apoio acima e continuar no checklist, finanças e preparação sem escolher um curso principal."
                 />
               )}
+            </details>
             </div>
           )}
 

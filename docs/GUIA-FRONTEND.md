@@ -12,6 +12,7 @@ A URL não identifica diretamente um plano ou caderno e recarregar exige novo lo
 | src/main.jsx | Monta App na raiz do HTML e importa o CSS global |
 | src/App.jsx | Página pública, cadastro/login, token/usuário em memória, menu, visão geral, planos e formulário de plano; monta PlanDetail, ProfilePage e AdminPage |
 | src/PlanDetail.jsx | Resumo do plano, curso, checklist e preparação de idioma; coordena tarefas, estado de erro/sucesso e abas; monta FinancePage e a página de caderno |
+| src/CoursesPage.jsx | Meus cursos: cadastro/edição pessoal, etiquetas, filtro, datas, link e adição ao cronograma; CourseEditor é o formulário interno |
 | src/TaskBoard.jsx | Quadro de três estados; cards recolhíveis, arraste nativo, seletor, prazo, edição/remoção e acesso ao caderno; delega persistência aos callbacks do plano |
 | src/ChecklistTools.jsx | Escolha recolhível de temas, geração aditiva e criação/edição de tarefa própria; usa API real e atualiza a lista do plano |
 | src/TaskNotesPage.jsx | Página do caderno: carrega/salva texto da tarefa, sugestões por tema/categoria, modelo só em texto vazio, limite, horário e confirmação de saída sem salvar |
@@ -31,6 +32,9 @@ A URL não identifica diretamente um plano ou caderno e recarregar exige novo lo
 flowchart TD
     Main[main.jsx] --> App[App.jsx]
     App --> Plan[PlanDetail.jsx]
+    App --> Courses[CoursesPage.jsx]
+    Plan --> Courses
+    Courses --> API
     App --> Profile[ProfilePage.jsx]
     App --> Admin[AdminPage.jsx]
     Plan --> Board[TaskBoard.jsx]
@@ -110,3 +114,14 @@ compartilhado do grupo; o Compose -Local oferece H2 para esse propósito.
 [API](https://github.com/RafaSantos398/Projeto_Final_Arquitetura_de_objetos_ageis/blob/main/docs/API.md) ·
 [Diagramas](https://github.com/RafaSantos398/Projeto_Final_Arquitetura_de_objetos_ageis/blob/main/docs/DIAGRAMAS.md) ·
 [Revisão de escopo](https://github.com/RafaSantos398/Projeto_Final_Arquitetura_de_objetos_ageis/blob/main/docs/REVISAO-ESCOPO.md).
+
+
+## Cursos pessoais em 03/11/2026
+
+CoursesPage funciona no menu Meus cursos e dentro do plano. No menu, busca os planos
+para escolher em qual cronograma inserir; dentro do plano, usa o plano já aberto e
+atualiza a lista de tarefas via callback. Formulário usa checkboxes nativos para várias
+etiquetas e não consulta instituições obrigatórias. CourseEditor salva no endpoint pessoal.
+AdminPage filtra pessoais para não misturar seu formulário de catálogo com este fluxo.
+PlanDetail filtra pessoais fora da seleção de curso principal e mostra o catálogo em
+seção recolhível. TaskBoard identifica a origem como Meu curso, com caderno por tarefa.
