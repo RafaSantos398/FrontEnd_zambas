@@ -54,7 +54,7 @@ npm run build
 ```
 
 Oito testes do cliente HTTP e build aprovados na revisão de 03/11/2026. O backend
-correspondente passou nos 74 testes após simplificação de erros e validação de senha.
+correspondente passou nos 76 testes após simplificação de erros e validação de senha.
 A Vercel acompanha main e publica automaticamente. Conferir Ready e o commit no
 painel antes de considerar a atualização concluída. [Guia Vercel](DEPLOY-VERCEL.md).
 
@@ -95,3 +95,15 @@ continua disponível em seção opcional recolhível. Cursos pessoais não exige
 Contrato: POST /cursos/pessoais, PUT /cursos/pessoais/{id}, GET /cursos (catálogo + próprios),
 POST /planos-intercambio/{id}/tarefas/curso com cursoId. Publicar após migração
 20261103-cursos-pessoais.sql e backend correspondente. Etiquetas/datas vêm da API real.
+
+
+## Área de estudo do curso
+
+O cadastro/edição pessoal permite selecionar AreaEstudo existente ou criar nova área.
+O catálogo administrativo também permite escolher a área. A listagem mostra o nome
+vindo da entidade e permite filtro por área, independente do filtro de etiquetas.
+A nova área é categoria compartilhada; o curso pessoal permanece privado.
+
+Request de curso inclui areaEstudoId ou areaEstudoNome; response devolve ID/nome.
+Null em ambos remove o vínculo no PUT. Migração backend 20261103-area-do-curso.sql
+precisa estar aplicada antes da publicação desta interface. Não há biblioteca nova.

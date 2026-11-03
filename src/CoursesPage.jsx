@@ -9,7 +9,8 @@ export const courseTags = {
 }
 const dateLabel = date => date ? date.split("-").reverse().join("/") : "Sem data"
 
-function CourseEditor({ course, token, onClose, onSaved, onUnauthorized }) {
+function CourseEditor({ course, areas, token, onClose, onSaved, onUnauthorized }) {
+  const [areaId, setAreaId] = useState(course?.areaEstudoId ? String(course.areaEstudoId) : "")
   const [tags, setTags] = useState(course?.etiquetas || [])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -26,6 +27,8 @@ function CourseEditor({ course, token, onClose, onSaved, onUnauthorized }) {
         token, method: course ? "PUT" : "POST", body: {
           nome: optional("nome"), descricao: optional("descricao"), instituicaoNome: optional("instituicaoNome"),
           idioma: optional("idioma"), inicioPrevisto: optional("inicio"), fimPrevisto: optional("fim"), link: optional("link"), etiquetas: tags,
+          areaEstudoId: areaId && areaId !== "new" ? Number(areaId) : null,
+          areaEstudoNome: areaId === "new" ? optional("areaNome") : null,
         },
       })
       onSaved(saved)
@@ -46,6 +49,16 @@ function CourseEditor({ course, token, onClose, onSaved, onUnauthorized }) {
       <label><span>Início previsto <span className="optional-label">Opcional</span></span><input type="date" name="inicio" defaultValue={course?.inicioPrevisto || ""} /></label>
       <label><span>Término previsto <span className="optional-label">Opcional</span></span><input type="date" name="fim" defaultValue={course?.fimPrevisto || ""} /></label>
       <label className="span-two"><span>Link do curso <span className="optional-label">Opcional</span></span><input name="link" type="url" maxLength={500} defaultValue={course?.link || ""} placeholder="https://..." /></label>
+      <div className="span-two course-area-field">
+        <label htmlFor="course-area">Área de estudo <span className="optional-label">Opcional</span></label>
+        <select id="course-area" value={areaId} onChange={event => setAreaId(event.target.value)}>
+          <option value="">Sem área informada</option>
+          {areas.map(area => <option key={area.id} value={area.id}>{area.nome}</option>)}
+          <option value="new">Criar nova área…</option>
+        </select>
+        {areaId === "new" && <><label htmlFor="course-area-name">Nome da nova área</label><input id="course-area-name" name="areaNome" required maxLength={100} placeholder="Ex.: Economia, Letras, Tecnologia" />
+          <small className="control-help">As áreas são categorias compartilhadas. Seu curso continua privado.</small></>}
+      </div>
       <fieldset className="span-two course-tag-picker"><legend>Em que este curso ajuda?</legend><p>Selecione uma ou mais etiquetas.</p>
         <div>{Object.entries(courseTags).map(([value, label]) => <label key={value}>
           <input type="checkbox" value={value} checked={tags.includes(value)} onChange={event => setTags(current => event.target.checked ? [...current, value] : current.filter(item => item !== value))} />{label}
@@ -60,6 +73,8 @@ function CourseEditor({ course, token, onClose, onSaved, onUnauthorized }) {
 
 export default function CoursesPage({ token, onUnauthorized, plan, onScheduled }) {
   const [courses, setCourses] = useState([])
+  const [areas, setAreas] = useState([])
+  const [areaFilter, setAreaFilter] = useState("")
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -76,8 +91,9 @@ export default function CoursesPage({ token, onUnauthorized, plan, onScheduled }
   useEffect(() => {
     const controller = new AbortController()
     Promise.all([api("/cursos", { token, signal: controller.signal }),
-      plan ? Promise.resolve([plan]) : api("/planos-intercambio", { token, signal: controller.signal })])
-      .then(([courses, plans]) => { if (!controller.signal.aborted) { setCourses(courses); setPlans(plans) } })
+      plan ? Promise.resolve([plan]) : api("/planos-intercambio", { token, signal: controller.signal }),
+      api("/area-estudo", { token, signal: controller.signal })])
+      .then(([courses, plans, areas]) => { if (!controller.signal.aborted) { setCourses(courses); setPlans(plans); setAreas(areas) } })
       .catch(error => { if (!controller.signal.aborted) handleError(error) })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
@@ -94,18 +110,20 @@ export default function CoursesPage({ token, onUnauthorized, plan, onScheduled }
     } catch (error) { handleError(error) }
     finally { setBusy(null) }
   }
-  const personal = courses.filter(course => course.pessoal && (!filter || course.etiquetas.includes(filter)))
+  const personal = courses.filter(course => course.pessoal && (!filter || course.etiquetas.includes(filter)) && (!areaFilter || String(course.areaEstudoId) === areaFilter))
   return <section className="content-stack personal-courses">
     <header className={plan ? "section-heading" : "page-heading"}><div><span className="eyebrow">Cursos criados por você</span>
       {plan ? <h2>Meus cursos de apoio</h2> : <h1>Meus cursos</h1>}
       <p>Organize o que quer aprender e transforme os estudos em etapas do seu plano.</p>
     </div><Button icon="plus" onClick={() => { setEditor("new"); setError("") }}>Cadastrar curso</Button></header>
     {error && <Notice>{error}</Notice>}{success && <Notice kind="success">{success}</Notice>}
-    <div className="course-filter"><label htmlFor="course-tag-filter">Filtrar por contribuição</label><select id="course-tag-filter" value={filter} onChange={event => setFilter(event.target.value)}><option value="">Todas as etiquetas</option>{Object.entries(courseTags).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></div>
-    {loading ? <Spinner label="Carregando meus cursos" /> : !personal.length ? <EmptyState title={filter ? "Nenhum curso com esta etiqueta" : "Seus cursos começam aqui"} text="Cadastre cursos de idioma, finanças, carreira e outras áreas. Você escolhe como eles ajudam no intercâmbio." /> : <div className="course-grid">
+    <div className="course-filters"><div className="course-filter"><label htmlFor="course-area-filter">Filtrar por área</label><select id="course-area-filter" value={areaFilter} onChange={event => setAreaFilter(event.target.value)}><option value="">Todas as áreas</option>{areas.map(area => <option key={area.id} value={area.id}>{area.nome}</option>)}</select></div>
+    <div className="course-filter"><label htmlFor="course-tag-filter">Filtrar por contribuição</label><select id="course-tag-filter" value={filter} onChange={event => setFilter(event.target.value)}><option value="">Todas as etiquetas</option>{Object.entries(courseTags).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></div></div>
+    {loading ? <Spinner label="Carregando meus cursos" /> : !personal.length ? <EmptyState title={filter || areaFilter ? "Nenhum curso com estes filtros" : "Seus cursos começam aqui"} text="Cadastre cursos de idioma, finanças, carreira e outras áreas. Você escolhe como eles ajudam no intercâmbio." /> : <div className="course-grid">
       {personal.map(course => <article className="panel course-card personal-course" key={course.id}>
         <div className="task-tags">{course.etiquetas.map(tag => <span key={tag}>{courseTags[tag]}</span>)}</div>
         <h3>{course.nome}</h3>{course.instituicaoNome && <strong>{course.instituicaoNome}</strong>}
+        <span className="course-area-label">Área: {course.areaEstudoNome || "Não informada"}</span>
         <p>{course.descricao || "Defina seu objetivo na edição do curso."}</p>
         <dl className="course-dates"><div><dt>Início</dt><dd>{dateLabel(course.inicioPrevisto)}</dd></div><div><dt>Término</dt><dd>{dateLabel(course.fimPrevisto)}</dd></div></dl>
         {course.link && <a className="notes-link" href={course.link} target="_blank" rel="noopener noreferrer">Acessar curso ↗</a>}
@@ -117,7 +135,7 @@ export default function CoursesPage({ token, onUnauthorized, plan, onScheduled }
         </div>}
       </article>)}
     </div>}
-    {editor && <CourseEditor key={editor.id || "new"} course={editor === "new" ? null : editor} token={token} onUnauthorized={onUnauthorized}
-      onClose={() => setEditor(null)} onSaved={saved => { setCourses(current => [saved, ...current.filter(item => item.id !== saved.id)]); setEditor(null); setSuccess("Curso salvo na sua conta.") }} />}
+    {editor && <CourseEditor key={editor.id || "new"} course={editor === "new" ? null : editor} areas={areas} token={token} onUnauthorized={onUnauthorized}
+      onClose={() => setEditor(null)} onSaved={saved => { if (saved.areaEstudoId) setAreas(current => current.some(area => area.id === saved.areaEstudoId) ? current : [...current, { id: saved.areaEstudoId, nome: saved.areaEstudoNome }]); setCourses(current => [saved, ...current.filter(item => item.id !== saved.id)]); setEditor(null); setSuccess("Curso salvo na sua conta.") }} />}
   </section>
 }

@@ -125,3 +125,9 @@ etiquetas e não consulta instituições obrigatórias. CourseEditor salva no en
 AdminPage filtra pessoais para não misturar seu formulário de catálogo com este fluxo.
 PlanDetail filtra pessoais fora da seleção de curso principal e mostra o catálogo em
 seção recolhível. TaskBoard identifica a origem como Meu curso, com caderno por tarefa.
+
+
+Área de estudo: CoursesPage carrega /area-estudo, mantém o filtro e passa as opções
+a CourseEditor. O formulário envia ID existente ou nome para criação e atualiza as
+opções com a área retornada. AdminPage recebe a seleção de área usando o catálogo
+já carregado. A área do card vem de CursoResponse, não de texto paralelo no frontend.

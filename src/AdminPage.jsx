@@ -145,6 +145,7 @@ export default function AdminPage({ token, onUnauthorized }) {
     } else if (section === "courses") {
       body = {
         instituicaoId: Number(value("instituicaoId")),
+        areaEstudoId: value("areaEstudoId") ? Number(value("areaEstudoId")) : null,
 
         nome: value("nome"),
 
@@ -466,6 +467,12 @@ export default function AdminPage({ token, onUnauthorized }) {
                         ))}
                       </select>
                     </label>
+                    <div className="course-area-field"><label htmlFor="admin-course-area">Área de estudo</label>
+                      <select id="admin-course-area" name="areaEstudoId" defaultValue={editor.areaEstudoId || ""}>
+                        <option value="">Sem área informada</option>
+                        {catalogs.areas.map(area => <option key={area.id} value={area.id}>{area.nome}</option>)}
+                      </select>
+                    </div>
                     <label>
                       Tipo de intercâmbio
                       <select

@@ -496,3 +496,9 @@ select, :is(.form-grid, .compact-field, .course-picker) select { background-imag
 .course-editor { width: min(740px, calc(100vw - 32px)); }
 .course-section > details > summary { cursor: pointer; font-weight: 650; }
 .course-section > details[open] > summary { margin-bottom: 20px; }
+
+.course-area-field { display: grid; gap: 8px; }
+.course-area-field > label { font-weight: 650; }
+.course-area-label { color: #654286; font-size: .9rem; font-weight: 600; }
+.course-filters { display: flex; gap: 16px; flex-wrap: wrap; }
+.course-filters .course-filter { flex: 1 1 220px; }
